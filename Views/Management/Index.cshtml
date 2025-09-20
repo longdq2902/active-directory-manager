@@ -1,0 +1,187 @@
+﻿@model ADPasswordManager.Models.ViewModels.UserManagementViewModel
+@{
+    ViewData["Title"] = "User Management";
+}
+
+<div id="reset-password-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
+    <div class="relative top-20 mx-auto p-5 border w-full max-w-xl shadow-lg rounded-md bg-white">
+        <div class="flex justify-between items-center border-b pb-3">
+            <h3 class="text-xl font-semibold text-gray-900">
+                Reset Password for: <span id="modal-username" class="text-indigo-600 font-bold"></span>
+            </h3>
+            <button id="close-modal-btn" class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm p-1.5 ml-auto inline-flex items-center">
+                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path></svg>
+            </button>
+        </div>
+        <div class="mt-4">
+            <iframe id="reset-password-iframe" src="about:blank" class="w-full h-96" frameborder="0"></iframe>
+        </div>
+    </div>
+</div>
+
+
+<div class="max-w-7xl mx-auto">
+    <div class="flex flex-col md:flex-row -mx-4">
+
+        <div class="w-full md:w-1/4 px-4 mb-4 md:mb-0">
+            <div class="bg-white shadow-md rounded-lg p-4">
+                <h2 class="text-lg font-semibold mb-4 text-gray-800 border-b pb-2">Managed Groups</h2>
+                <ul id="group-list">
+                    <li class="mb-2">
+                        <a asp-action="Index" asp-all-route-data="null"
+                           class="filter-link block px-3 py-2 rounded-md text-gray-700 @(string.IsNullOrEmpty(Model.SelectedGroup) ? "bg-indigo-100 font-semibold" : "hover:bg-gray-100")">
+                            All Users
+                        </a>
+                    </li>
+                    @foreach (var group in Model.ManagedGroups)
+                    {
+                        <li class="mb-2">
+                            <a asp-action="Index" asp-route-selectedGroup="@group"
+                               class="filter-link block px-3 py-2 rounded-md text-gray-600 @(Model.SelectedGroup == group ? "bg-indigo-100 font-semibold" : "hover:bg-gray-100")">
+                                @group
+                            </a>
+                        </li>
+                    }
+                </ul>
+            </div>
+        </div>
+
+        <div class="w-full md:w-3/4 px-4">
+
+            <div class="mb-4">
+                <form id="search-form" asp-action="Index" method="get" class="bg-white shadow-md rounded-lg p-4 flex items-center">
+                    <input type="hidden" name="selectedGroup" value="@Model.SelectedGroup" />
+                    <input type="search" name="searchTerm" value="@Model.SearchTerm" placeholder="Search by username or display name..."
+                           class="form-input block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50" />
+                    <button type="submit" class="ml-4 px-4 py-2 bg-indigo-600 text-white font-semibold rounded-md hover:bg-indigo-700">
+                        Search
+                    </button>
+                    <a asp-action="Index" asp-route-selectedGroup="@Model.SelectedGroup" class="filter-link ml-2 px-4 py-2 bg-gray-200 text-gray-700 font-semibold rounded-md hover:bg-gray-300">
+                        Clear
+                    </a>
+                    <div id="loading-spinner" class="hidden ml-4">
+                        <svg class="animate-spin h-5 w-5 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                    </div>
+                </form>
+            </div>
+
+            @if (TempData["SuccessMessage"] != null)
+            {
+                <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4" role="alert">
+                    <span class="block sm:inline">@TempData["SuccessMessage"]</span>
+                </div>
+            }
+
+            <div class="bg-white shadow-md rounded-lg overflow-x-auto">
+                <table class="min-w-full leading-normal">
+                    <thead>
+                        <tr class="border-b-2 border-gray-200 bg-gray-50 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                            <th class="px-5 py-3">Username</th>
+                            <th class="px-5 py-3">Display Name</th>
+                            <th class="px-5 py-3 text-center">Never Expires</th>
+                            <th class="px-5 py-3 text-center">Change At Logon</th>
+                            <th class="px-5 py-3">Password Expiration</th>
+                            <th class="px-5 py-3">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var user in Model.Users)
+                        {
+                            <tr class="border-b border-gray-200 hover:bg-gray-100">
+                                <td class="px-5 py-4 text-sm"><p class="text-gray-900 whitespace-no-wrap">@user.Username</p></td>
+                                <td class="px-5 py-4 text-sm"><p class="text-gray-900 whitespace-no-wrap">@user.DisplayName</p></td>
+                                <td class="px-5 py-4 text-sm text-center">
+                                    @if (user.IsPasswordNeverExpires)
+                                    {
+                                        <svg class="w-6 h-6 text-green-500 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                    }
+                                </td>
+                                <td class="px-5 py-4 text-sm text-center">
+                                    @if (user.IsPasswordChangeRequired)
+                                    {
+                                        <svg class="w-6 h-6 text-green-500 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                    }
+                                </td>
+                                <td class="px-5 py-4 text-sm">
+                                    <p class="text-gray-900 whitespace-no-wrap">
+                                        @(user.PasswordExpirationDate.HasValue? user.PasswordExpirationDate.Value.ToString("dd/MM/yyyy HH:mm") : "N/A")
+                                    </p>
+                                </td>
+                                <td class="px-5 py-4 text-sm">
+                                    <a href="@Url.Action("ResetPassword", new { username = user.Username })"
+                                       data-username="@user.Username"
+                                       class="reset-password-link text-indigo-600 hover:text-indigo-900 font-semibold">
+                                        Reset Password
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const spinner = document.getElementById('loading-spinner');
+
+            const searchForm = document.getElementById('search-form');
+            if (searchForm) {
+                searchForm.addEventListener('submit', function() {
+                    spinner.classList.remove('hidden');
+                });
+            }
+
+            const filterLinks = document.querySelectorAll('.filter-link');
+            filterLinks.forEach(function(link) {
+                link.addEventListener('click', function() {
+                    spinner.classList.remove('hidden');
+                });
+            });
+
+            const modal = document.getElementById('reset-password-modal');
+            const iframe = document.getElementById('reset-password-iframe');
+            const closeModalBtn = document.getElementById('close-modal-btn');
+            const resetLinks = document.querySelectorAll('.reset-password-link');
+            const modalUsernameSpan = document.getElementById('modal-username');
+
+            const closeModal = () => {
+                modal.classList.add('hidden');
+                iframe.src = 'about:blank';
+            };
+
+            resetLinks.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const url = this.href;
+                    const username = this.dataset.username;
+                    modalUsernameSpan.textContent = username;
+                    iframe.src = url;
+                    modal.classList.remove('hidden');
+                });
+            });
+
+            closeModalBtn.addEventListener('click', closeModal);
+
+            modal.addEventListener('click', function(e) {
+                if (e.target === modal) {
+                    closeModal();
+                }
+            });
+
+            window.addEventListener('message', function(event) {
+                if (event.data === 'resetSuccess') {
+                    closeModal();
+                    spinner.classList.remove('hidden');
+                    window.location.reload();
+                }
+            }, false);
+        });
+    </script>
+}

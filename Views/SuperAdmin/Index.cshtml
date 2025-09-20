@@ -1,0 +1,50 @@
+﻿@model IEnumerable<ADPasswordManager.Models.Entities.DelegationRule>
+
+@{
+    ViewData["Title"] = "Delegation Management";
+}
+
+<div class="max-w-7xl mx-auto">
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-3xl font-bold text-gray-800">@ViewData["Title"]</h1>
+        <div>
+            <a asp-action="Create" class="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700">
+                Add New Rule
+            </a>
+        </div>
+    </div>
+
+    <div class="bg-white shadow-md rounded-lg overflow-x-auto">
+        <table class="min-w-full leading-normal">
+            <thead>
+                <tr class="border-b-2 border-gray-200 bg-gray-50 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    <th class="px-5 py-3">Admin Group</th>
+                    <th class="px-5 py-3">Managed Groups</th>
+                    <th class="px-5 py-3">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var rule in Model)
+                {
+                    <tr class="border-b border-gray-200 hover:bg-gray-100">
+                        <td class="px-5 py-4 text-sm">
+                            <p class="text-gray-900 font-semibold whitespace-no-wrap">@rule.AdminGroup</p>
+                        </td>
+                        <td class="px-5 py-4 text-sm">
+                            <div class="flex flex-wrap gap-2">
+                                @foreach (var group in rule.ManagedGroups.Split(',', StringSplitOptions.RemoveEmptyEntries))
+                                {
+                                    <span class="px-2 py-1 bg-gray-200 text-gray-800 text-xs font-medium rounded-full">@group</span>
+                                }
+                            </div>
+                        </td>
+                        <td class="px-5 py-4 text-sm">
+                            <a href="#" class="text-indigo-600 hover:text-indigo-900 mr-4 font-semibold">Edit</a>
+                            <a href="#" class="text-red-600 hover:text-red-900 font-semibold">Delete</a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

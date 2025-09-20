@@ -1,0 +1,44 @@
+﻿@page
+@model LoginModel
+
+@{
+    ViewData["Title"] = "Log in";
+}
+
+<div class="flex items-center justify-center min-h-screen">
+    <div class="w-full max-w-md">
+        <form id="account" method="post" class="bg-white shadow-md rounded-lg px-8 pt-6 pb-8 mb-4">
+            <h1 class="text-center text-2xl font-bold mb-6">@ViewData["Title"]</h1>
+            <hr class="mb-6" />
+            <div asp-validation-summary="ModelOnly" class="text-red-600 text-sm" role="alert"></div>
+
+            <div class="mb-4">
+                <label asp-for="Input.Email" class="block text-gray-700 text-sm font-bold mb-2"></label>
+                <input asp-for="Input.Email" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" autocomplete="username" aria-required="true" placeholder="name@example.com" />
+                <span asp-validation-for="Input.Email" class="text-red-600 text-sm mt-1"></span>
+            </div>
+
+            <div class="mb-6">
+                <label asp-for="Input.Password" class="block text-gray-700 text-sm font-bold mb-2"></label>
+                <input asp-for="Input.Password" type="password" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 mb-3 leading-tight focus:outline-none focus:shadow-outline" autocomplete="current-password" aria-required="true" placeholder="password" />
+                <span asp-validation-for="Input.Password" class="text-red-600 text-sm mt-1"></span>
+            </div>
+
+            <div class="mb-6">
+                <label class="flex items-center">
+                    <input class="form-checkbox h-5 w-5 text-indigo-600" asp-for="Input.RememberMe" />
+                    <span class="ml-2 text-gray-700">@Html.DisplayNameFor(m => m.Input.RememberMe)</span>
+                </label>
+            </div>
+
+            <div>
+                <button id="login-submit" type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">Log in</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
