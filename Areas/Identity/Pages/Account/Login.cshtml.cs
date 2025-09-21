@@ -87,6 +87,7 @@ namespace ADPasswordManager.Areas.Identity.Pages.Account
         public async Task<IActionResult> OnPostAsync(string returnUrl = null)
         {
             returnUrl ??= Url.Content("~/");
+            _logger.LogInformation("returnUrl: {returnUrl}", returnUrl);
 
             ExternalLogins = (await _signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
 
@@ -118,14 +119,20 @@ namespace ADPasswordManager.Areas.Identity.Pages.Account
 
                     // Kiểm tra xem người dùng có phải là SuperAdmin không
                     string superAdminGroup = _configuration.GetValue<string>("ADSettings:SuperAdminGroup");
+                    _logger.LogDebug("Admin group is: {superAdminGroup}", superAdminGroup);
                     bool isSuperAdmin = false;
 
                     if (!string.IsNullOrEmpty(superAdminGroup))
                     {
                         try
                         {
-                            // Sử dụng PrincipalContext để kiểm tra thành viên nhóm
-                            using (var pc = new PrincipalContext(ContextType.Domain, _configuration.GetValue<string>("ADSettings:Domain")))
+                            // Lấy thông tin tài khoản dịch vụ từ appsettings.json
+                            string serviceUser = _configuration.GetValue<string>("ADSettings:ServiceUser");
+                            string servicePassword = _configuration.GetValue<string>("ADSettings:ServicePassword");
+                            string domain = _configuration.GetValue<string>("ADSettings:Domain");
+
+                            // Sử dụng PrincipalContext với tài khoản dịch vụ để có quyền truy vấn AD
+                            using (var pc = new PrincipalContext(ContextType.Domain, domain, serviceUser, servicePassword))
                             {
                                 var userPrincipal = UserPrincipal.FindByIdentity(pc, IdentityType.SamAccountName, Input.Email);
                                 if (userPrincipal != null)
@@ -158,7 +165,26 @@ namespace ADPasswordManager.Areas.Identity.Pages.Account
                     // --- KẾT THÚC LOGIC GÁN VAI TRÒ ---
 
                     _logger.LogInformation("User {user} logged in with role {role}.", user.UserName, newRoleClaim.Value);
-                    return LocalRedirect(returnUrl);
+                    _logger.LogDebug("User {user} logged in with role {role}.", user.UserName, newRoleClaim.Value);
+
+                    // Kiểm tra xem người dùng có đang cố truy cập một trang cụ thể không
+                    if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl) && returnUrl != "/")
+                    {
+                        // Nếu có, chuyển hướng họ đến trang đó
+                        return LocalRedirect(returnUrl);
+                    }
+                    else
+                    {
+                        // Nếu không, chuyển hướng dựa trên vai trò
+                        if (newRoleClaim.Value == Roles.SuperAdmin)
+                        {
+                            return RedirectToAction("Index", "SuperAdmin");
+                        }
+                        else
+                        {
+                            return RedirectToAction("Index", "Management");
+                        }
+                    }
                 }
                 else
                 {
