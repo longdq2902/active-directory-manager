@@ -220,5 +220,49 @@ namespace ADPasswordManager.Services
                 return false;
             }
         }
+
+
+        [SupportedOSPlatform("windows")]
+        public List<string> GetAllGroupNames()
+        {
+            _logger.LogDebug("--- Starting GetAllGroupNames ---");
+            var groupNames = new List<string>();
+
+            if (string.IsNullOrEmpty(_domain) || string.IsNullOrEmpty(_serviceUser) || string.IsNullOrEmpty(_servicePassword))
+            {
+                _logger.LogError("AD settings (Domain, ServiceUser, ServicePassword) are not fully configured.");
+                return groupNames;
+            }
+
+            try
+            {
+                using (var context = new PrincipalContext(ContextType.Domain, _domain, _serviceUser, _servicePassword))
+                {
+                    using (var searcher = new PrincipalSearcher(new GroupPrincipal(context)))
+                    {
+                        foreach (var result in searcher.FindAll())
+                        {
+                            if (result is GroupPrincipal group)
+                            {
+                                groupNames.Add(group.SamAccountName);
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "An error occurred while getting all group names from AD.");
+            }
+
+            _logger.LogDebug("--- Finished GetAllGroupNames. Found {count} groups. ---", groupNames.Count);
+            return groupNames.OrderBy(name => name).ToList();
+        }
+
+
+
+
+
+
     }
 }

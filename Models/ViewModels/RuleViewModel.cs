@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using Microsoft.AspNetCore.Mvc.Rendering;
+using System.ComponentModel.DataAnnotations;
 
 namespace ADPasswordManager.Models.ViewModels
 {
@@ -10,8 +11,10 @@ namespace ADPasswordManager.Models.ViewModels
         [Display(Name = "Admin Group")]
         public string AdminGroup { get; set; }
 
-        [Required]
-        [Display(Name = "Managed Groups (one per line)")]
-        public string ManagedGroups { get; set; }
+        [Display(Name = "Managed Groups")]
+        public List<string> SelectedManagedGroups { get; set; } = new List<string>();
+
+        // Dòng dưới đây đã được XÓA
+        // public SelectList AllAdGroups { get; set; } 
     }
 }
