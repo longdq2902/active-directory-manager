@@ -1,0 +1,62 @@
+﻿@model ADPasswordManager.Models.ViewModels.RuleViewModel
+@{
+    Layout = null;
+    var action = Model.Id > 0 ? "Edit" : "Create";
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@(action) Rule</title>
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css" />
+</head>
+<body class="bg-gray-50 p-4">
+
+    <form asp-action="@action">
+        <input type="hidden" asp-for="Id" />
+        <div asp-validation-summary="ModelOnly" class="text-red-600 bg-red-50 p-3 rounded-md mb-4 border border-red-200"></div>
+
+        <div class="mb-6">
+            <label asp-for="AdminGroup" class="block text-gray-700 text-sm font-bold mb-2"></label>
+            <select asp-for="AdminGroup" asp-items="@ViewBag.AllAdGroups" class="form-select w-full" id="admin-group-select">
+                <option value="">-- Select an Admin Group --</option>
+            </select>
+            <span asp-validation-for="AdminGroup" class="text-red-600 text-sm mt-1"></span>
+        </div>
+
+        <div class="mb-6">
+            <label asp-for="SelectedManagedGroups" class="block text-gray-700 text-sm font-bold mb-2"></label>
+            <select asp-for="SelectedManagedGroups" asp-items="@ViewBag.AllAdGroups" class="form-select w-full" id="managed-groups-select" multiple>
+            </select>
+            <span asp-validation-for="SelectedManagedGroups" class="text-red-600 text-sm mt-1"></span>
+        </div>
+
+        <div class="flex items-center justify-end gap-4 border-t pt-4 mt-6">
+            <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                @(Model.Id > 0 ? "Save Changes" : "Create Rule")
+            </button>
+        </div>
+    </form>
+
+    <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Khởi tạo Choices.js, nó sẽ tự động nhận các giá trị đã được chọn sẵn
+            new Choices('#admin-group-select');
+            new Choices('#managed-groups-select', { removeItemButton: true });
+
+            // Hai dòng gây lỗi đã được XÓA
+        });
+    </script>
+
+    @if (ViewBag.SaveSuccess == true)
+    {
+        <script>
+            window.parent.postMessage('ruleSaved', '*');
+        </script>
+    }
+</body>
+</html>

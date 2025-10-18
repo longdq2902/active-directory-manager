@@ -1,0 +1,64 @@
+﻿@model IEnumerable<ADPasswordManager.Models.Entities.DelegationRule>
+
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Confirm Multiple Deletion</title>
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body class="bg-gray-50 p-6">
+
+    @if (ViewBag.DeleteSuccess != true)
+    {
+        <h3 class="text-lg font-semibold text-gray-900">Are you sure you want to delete these @Model.Count() rules?</h3>
+        <p class="text-sm text-gray-600 mt-1">This action cannot be undone.</p>
+        <hr class="my-4" />
+
+        <div class="max-h-60 overflow-y-auto pr-2">
+            <ul class="list-disc list-inside space-y-1">
+                @foreach (var rule in Model)
+                {
+                    <li class="text-sm text-gray-800 font-medium">@rule.AdminGroup</li>
+                }
+            </ul>
+        </div>
+
+        <form asp-action="DeleteMultiple" class="mt-6">
+            @foreach (var rule in Model)
+            {
+                <input type="hidden" name="ruleIds" value="@rule.Id" />
+            }
+            <div class="flex justify-end gap-4">
+                <button type="button" id="cancel-delete-btn" class="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50">
+                    Cancel
+                </button>
+                <input type="submit" value="OK (Delete All)" class="py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 cursor-pointer" />
+            </div>
+        </form>
+    }
+
+    <script>
+        // Lắng nghe nút Cancel nếu nó tồn tại
+        const cancelBtn = document.getElementById('cancel-delete-btn');
+        if (cancelBtn) {
+            cancelBtn.addEventListener('click', () => {
+                window.parent.postMessage('closeRuleModal', '*');
+            });
+        }
+    </script>
+
+    @if (ViewBag.DeleteSuccess == true)
+    {
+        <script>
+            // Nếu đã xóa thành công, gửi tín hiệu về cho cửa sổ cha
+            window.parent.postMessage('ruleSaved', '*');
+        </script>
+    }
+</body>
+</html>
