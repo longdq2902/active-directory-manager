@@ -2,6 +2,8 @@
 using ADPasswordManager.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.EntityFrameworkCore;
 using System.DirectoryServices;
 using System.DirectoryServices.AccountManagement;
 using System.Runtime.Versioning;
@@ -141,6 +143,61 @@ namespace ADPasswordManager.Controllers
                 }
             }
 
+            return View(model);
+        }
+
+        // GET: Management/CreateUser
+        public IActionResult CreateUser()
+        {
+            return View(new CreateUserViewModel());
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult CreateUser(CreateUserViewModel model)
+        {
+            if (string.IsNullOrEmpty(model.Username))
+            {
+                ModelState.AddModelError("Username", "The Username field is required.");
+            }
+
+            if (string.IsNullOrEmpty(model.FirstName))
+            {
+                ModelState.AddModelError("FirstName", "The FirstName field is required.");
+            }
+
+            if (string.IsNullOrEmpty(model.LastName))
+            {
+                ModelState.AddModelError("LastName", "The LastName field is required.");
+            }
+
+            if (string.IsNullOrEmpty(model.Password))
+            {
+                ModelState.AddModelError("Password", "The Password field is required.");
+            }
+
+            if (string.IsNullOrEmpty(model.EmailAddress))
+            {
+                ModelState.AddModelError("EmailAddress", "The EmailAddress field is required.");
+            }
+
+            if (ModelState.IsValid)
+            {
+                bool isSuccess = _adManagementService.CreateUser(model.Username, model.EmailAddress, model.FirstName, model.LastName, model.Password);
+
+                if (isSuccess)
+                {
+                    // View sẽ dùng JavaScript để gửi thông điệp về cho trang chính
+                    ViewBag.ResetSuccess = true;
+                    TempData["SuccessMessage"] = $"Create user '{model.Username}' is successfully.";
+                    return View(model);
+                }  
+                else
+                {
+                    ModelState.AddModelError(string.Empty, "An error occurred while add the user. Please check the application logs for details.");
+                }
+
+            }
             return View(model);
         }
     }

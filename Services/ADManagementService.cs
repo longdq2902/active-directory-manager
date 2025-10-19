@@ -1,5 +1,6 @@
 ﻿using ADPasswordManager.Data; // Thêm dòng này
 using ADPasswordManager.Models.ViewModels;
+using Microsoft.VisualStudio.Web.CodeGenerators.Mvc.Templates.BlazorIdentity.Pages.Manage;
 using System.DirectoryServices.AccountManagement;
 using System.Runtime.Versioning;
 
@@ -259,6 +260,44 @@ namespace ADPasswordManager.Services
             return groupNames.OrderBy(name => name).ToList();
         }
 
+
+        public bool CreateUser(string username, string email, string firstName, string lastName, string password)
+        {
+            _logger.LogInformation("Attempting to creatre user for user '{username}' with email: {email}", username, email);
+            try
+            {
+                using (var pContext = new PrincipalContext(ContextType.Domain, _domain, _serviceUser, _servicePassword))
+                {
+                    var userPrincipal = UserPrincipal.FindByIdentity(pContext, IdentityType.SamAccountName, username);
+                    if (userPrincipal != null)
+                    {
+                        _logger.LogWarning("User '{username}' is existed. Create user failed.", username);
+                        return false;
+                    }
+
+
+                    using (UserPrincipal user = new UserPrincipal(pContext))
+                    {
+                        user.SamAccountName = username;
+                        user.EmailAddress = email;
+                        user.DisplayName = $"{firstName}{lastName}";
+                        user.SetPassword(password);
+                        user.ExpirePasswordNow();
+                        user.Save();
+                        user.Enabled = true;
+                    };
+
+                    _logger.LogDebug("Create user successfully !!!");
+                    return true;
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "An error occurred while resetting password for '{username}'", username);
+                return false;
+            }
+
+        }
 
 
 

@@ -1,0 +1,80 @@
+﻿@model ADPasswordManager.Models.ViewModels.CreateUserViewModel
+@{
+    // Dùng một layout trống vì trang này sẽ hiển thị trong iframe
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width" />
+    <title>Create User</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 p-4">
+    <div class="w-full">
+        <form asp-controller="Management" asp-action="CreateUser" method="post">
+            <div asp-validation-summary="ModelOnly" class="text-red-600 text-sm mb-4"></div>
+            <input type="hidden" asp-for="Username" />
+
+            <div class="mb-4">
+                <label asp-for="Username" class="block text-gray-700 text-sm font-bold mb-2"></label>
+                <input asp-for="Username" type="text" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" />
+                <span asp-validation-for="Username" class="text-red-600 text-sm mt-1"></span>
+            </div>
+
+            <div class="mb-6">
+                <label asp-for="FirstName" class="block text-gray-700 text-sm font-bold mb-2"></label>
+                <input asp-for="FirstName" type="text" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" />
+                <span asp-validation-for="FirstName" class="text-red-600 text-sm mt-1"></span>
+            </div>
+
+            <div class="mb-6">
+                <label asp-for="LastName" class="block text-gray-700 text-sm font-bold mb-2"></label>
+                <input asp-for="LastName" type="text" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" />
+                <span asp-validation-for="LastName" class="text-red-600 text-sm mt-1"></span>
+            </div>
+
+            <div class="mb-6">
+                <label asp-for="EmailAddress" class="block text-gray-700 text-sm font-bold mb-2"></label>
+                <input asp-for="EmailAddress" type="email" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" />
+                <span asp-validation-for="EmailAddress" class="text-red-600 text-sm mt-1"></span>
+            </div>
+
+
+            <div class="mb-6">
+                <label asp-for="Password" class="block text-gray-700 text-sm font-bold mb-2"></label>
+                <input asp-for="Password" type="password" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" />
+                <span asp-validation-for="Password" class="text-red-600 text-sm mt-1"></span>
+            </div>
+
+            <div class="mb-6">
+                <label asp-for="ConfirmPassword" class="block text-gray-700 text-sm font-bold mb-2"></label>
+                <input asp-for="ConfirmPassword" type="password" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" />
+                <span asp-validation-for="ConfirmPassword" class="text-red-600 text-sm mt-1"></span>
+            </div>
+
+
+            <div class="flex items-center justify-end">
+                <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                    Create User
+                </button>
+            </div>
+        </form>
+    </div>
+
+    @if (ViewBag.ResetSuccess == true)
+    {
+        <script>
+            // Gửi thông điệp về cho cửa sổ cha
+            window.parent.postMessage('resetSuccess', '*');
+        </script>
+    }
+
+    @section Scripts {
+        @{
+            await Html.RenderPartialAsync("_ValidationScriptsPartial");
+        }
+    }
+</body>
+</html>
