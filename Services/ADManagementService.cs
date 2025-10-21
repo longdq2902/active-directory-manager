@@ -14,6 +14,8 @@ namespace ADPasswordManager.Services
         private readonly string _domain;
         private readonly string _serviceUser;
         private readonly string _servicePassword;
+        private readonly string _serviceOU;
+        private readonly string _domainController;
 
         // Cập nhật Constructor để nhận ApplicationDbContext
         public ADManagementService(ILogger<ADManagementService> logger, IConfiguration configuration, ApplicationDbContext context)
@@ -25,6 +27,8 @@ namespace ADPasswordManager.Services
             _domain = configuration.GetValue<string>("ADSettings:Domain") ?? string.Empty;
             _serviceUser = configuration.GetValue<string>("ADSettings:ServiceUser") ?? string.Empty;
             _servicePassword = configuration.GetValue<string>("ADSettings:ServicePassword") ?? string.Empty;
+            _serviceOU = configuration.GetValue<string>("ADSettings:ServiceOU") ?? string.Empty;
+            _domainController = configuration.GetValue<string>("ADSettings:DomainController") ?? string.Empty;
         }
 
         // Thêm 2 tham số mới: selectedGroup và searchTerm
@@ -266,7 +270,7 @@ namespace ADPasswordManager.Services
             _logger.LogInformation("Attempting to creatre user for user '{username}' with email: {email}", username, email);
             try
             {
-                using (var pContext = new PrincipalContext(ContextType.Domain, _domain, _serviceUser, _servicePassword))
+                using (var pContext = new PrincipalContext(ContextType.Domain, _domain, _serviceOU, _serviceUser, _servicePassword))
                 {
                     var userPrincipal = UserPrincipal.FindByIdentity(pContext, IdentityType.SamAccountName, username);
                     if (userPrincipal != null)
@@ -276,15 +280,17 @@ namespace ADPasswordManager.Services
                     }
 
 
+
                     using (UserPrincipal user = new UserPrincipal(pContext))
                     {
                         user.SamAccountName = username;
                         user.EmailAddress = email;
                         user.DisplayName = $"{firstName}{lastName}";
-                        user.SetPassword(password);
-                        user.ExpirePasswordNow();
-                        user.Save();
                         user.Enabled = true;
+                        user.SetPassword(password);
+                        //user.ExpirePasswordNow();
+                        user.Save();
+
                     };
 
                     _logger.LogDebug("Create user successfully !!!");
