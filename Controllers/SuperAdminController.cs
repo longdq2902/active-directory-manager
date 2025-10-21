@@ -55,13 +55,19 @@ namespace ADPasswordManager.Controllers
             {
                 ModelState.AddModelError("SelectedManagedGroups", "Please select at least one managed group.");
             }
-
+            if (string.IsNullOrEmpty(model.ManagedOUs))
+            {
+                ModelState.AddModelError("ManagedOUs", "Please specify at least one Managed OU.");
+            }
             if (ModelState.IsValid)
             {
+                // Chuẩn hóa dữ liệu OUs: thay thế newline bằng dấu phẩy
+                var ouData = model.ManagedOUs.Replace("\r\n", ",").Replace("\n", ",");
                 var newRule = new DelegationRule
                 {
                     AdminGroup = model.AdminGroup,
-                    ManagedGroups = string.Join(",", model.SelectedManagedGroups)
+                    ManagedGroups = string.Join(",", model.SelectedManagedGroups),
+                    ManagedOUs = ouData // <-- LƯU DỮ LIỆU MỚI
                 };
 
                 _context.DelegationRules.Add(newRule);
@@ -99,7 +105,8 @@ namespace ADPasswordManager.Controllers
             {
                 Id = rule.Id,
                 AdminGroup = rule.AdminGroup,
-                SelectedManagedGroups = rule.ManagedGroups.Split(',', StringSplitOptions.RemoveEmptyEntries).ToList()
+                SelectedManagedGroups = rule.ManagedGroups.Split(',', StringSplitOptions.RemoveEmptyEntries).ToList(),
+                ManagedOUs = rule.ManagedOUs?.Replace(",", System.Environment.NewLine) ?? string.Empty
             };
 
             // Trả về một PartialView để hiển thị trong iframe
@@ -120,11 +127,16 @@ namespace ADPasswordManager.Controllers
             {
                 ModelState.AddModelError("SelectedManagedGroups", "Please select at least one managed group.");
             }
+            if (string.IsNullOrEmpty(model.ManagedOUs))
+            {
+                ModelState.AddModelError("ManagedOUs", "Please specify at least one Managed OU.");
+            }
 
             if (ModelState.IsValid)
             {
                 try
                 {
+                    var ouData = model.ManagedOUs.Replace("\r\n", ",").Replace("\n", ",");
                     var ruleToUpdate = await _context.DelegationRules.FindAsync(id);
                     if (ruleToUpdate == null)
                     {
@@ -133,6 +145,7 @@ namespace ADPasswordManager.Controllers
 
                     ruleToUpdate.AdminGroup = model.AdminGroup;
                     ruleToUpdate.ManagedGroups = string.Join(",", model.SelectedManagedGroups);
+                    ruleToUpdate.ManagedOUs = ouData; // <-- CẬP NHẬT DỮ LIỆU MỚI
 
                     _context.Update(ruleToUpdate);
                     await _context.SaveChangesAsync();

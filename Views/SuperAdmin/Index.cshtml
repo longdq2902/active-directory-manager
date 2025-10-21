@@ -44,6 +44,7 @@
                         </th>
                         <th class="px-5 py-3">Admin Group</th>
                         <th class="px-5 py-3">Managed Groups</th>
+                        <th class="px-5 py-3">Managed OUs</th>
                         <th class="px-5 py-3">Actions</th>
                     </tr>
                 </thead>
@@ -60,6 +61,14 @@
                             <td class="px-5 py-4 text-sm">
                                 <div class="flex flex-wrap gap-2">
                                     @foreach (var group in rule.ManagedGroups.Split(',', StringSplitOptions.RemoveEmptyEntries))
+                                    {
+                                        <span class="px-2 py-1 bg-gray-200 text-gray-800 text-xs font-medium rounded-full">@group</span>
+                                    }
+                                </div>
+                            </td>
+                            <td class="px-5 py-4 text-sm">
+                                <div class="flex flex-wrap gap-2">
+                                    @foreach (var group in rule.ManagedOUs.Split(',', StringSplitOptions.RemoveEmptyEntries))
                                     {
                                         <span class="px-2 py-1 bg-gray-200 text-gray-800 text-xs font-medium rounded-full">@group</span>
                                     }

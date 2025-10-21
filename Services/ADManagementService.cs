@@ -1,6 +1,7 @@
 ﻿using ADPasswordManager.Data; // Thêm dòng này
 using ADPasswordManager.Models.ViewModels;
 using Microsoft.VisualStudio.Web.CodeGenerators.Mvc.Templates.BlazorIdentity.Pages.Manage;
+using System.DirectoryServices;
 using System.DirectoryServices.AccountManagement;
 using System.Runtime.Versioning;
 
@@ -227,6 +228,8 @@ namespace ADPasswordManager.Services
         }
 
 
+
+
         [SupportedOSPlatform("windows")]
         public List<string> GetAllGroupNames()
         {
@@ -264,45 +267,96 @@ namespace ADPasswordManager.Services
             return groupNames.OrderBy(name => name).ToList();
         }
 
-
-        public bool CreateUser(string username, string email, string firstName, string lastName, string password)
+        public List<string> GetAllOUs()
         {
-            _logger.LogInformation("Attempting to creatre user for user '{username}' with email: {email}", username, email);
+            _logger.LogDebug("--- Starting GetAllOUs ---");
+            var ouList = new List<string>();
+
+            if (string.IsNullOrEmpty(_domain) || string.IsNullOrEmpty(_serviceUser) || string.IsNullOrEmpty(_servicePassword))
+            {
+                _logger.LogError("AD settings (Domain, ServiceUser, ServicePassword) are not fully configured.");
+                return ouList;
+            }
+
             try
             {
-                using (var pContext = new PrincipalContext(ContextType.Domain, _domain, _serviceOU, _serviceUser, _servicePassword))
+                // Sử dụng PrincipalContext với root domain (không cần _serviceOU)
+                using (var context = new PrincipalContext(ContextType.Domain, _domain, _serviceUser, _servicePassword))
+                {
+                    // Dùng DirectorySearcher để tìm kiếm hiệu quả các OU
+                    using (var de = new DirectoryEntry($"LDAP://{_domain}", _serviceUser, _servicePassword))
+                    {
+                        using (var searcher = new DirectorySearcher(de))
+                        {
+                            searcher.Filter = "(objectCategory=organizationalUnit)";
+                            searcher.SearchScope = SearchScope.Subtree;
+                            searcher.PropertiesToLoad.Add("distinguishedName");
+
+                            foreach (SearchResult result in searcher.FindAll())
+                            {
+                                if (result.Properties.Contains("distinguishedName"))
+                                {
+                                    ouList.Add((string)result.Properties["distinguishedName"][0]);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "An error occurred while getting all OUs from AD.");
+            }
+
+            _logger.LogDebug("--- Finished GetAllOUs. Found {count} OUs. ---", ouList.Count);
+            return ouList.OrderBy(name => name).ToList();
+        }
+
+        // Sửa lại phương thức CreateUser
+        public bool CreateUser(string username, string email, string firstName, string lastName, string password, string selectedOU, bool requireChange, bool neverExpires) // Thêm tham số selectedOU
+        {
+            _logger.LogInformation("Attempting to create user '{username}' in OU: {ou}", username, selectedOU);
+            try
+            {
+                // DÙNG selectedOU thay vì _serviceOU
+                using (var pContext = new PrincipalContext(ContextType.Domain, _domain, selectedOU, _serviceUser, _servicePassword))
                 {
                     var userPrincipal = UserPrincipal.FindByIdentity(pContext, IdentityType.SamAccountName, username);
                     if (userPrincipal != null)
                     {
-                        _logger.LogWarning("User '{username}' is existed. Create user failed.", username);
+                        _logger.LogWarning("User '{username}' already exists in this context. Create user failed.", username);
                         return false;
                     }
-
-
 
                     using (UserPrincipal user = new UserPrincipal(pContext))
                     {
                         user.SamAccountName = username;
                         user.EmailAddress = email;
-                        user.DisplayName = $"{firstName}{lastName}";
+                        user.DisplayName = $"{firstName} {lastName}"; // Thêm khoảng trắng
+                        user.GivenName = firstName;
+                        user.Surname = lastName;
                         user.Enabled = true;
                         user.SetPassword(password);
-                        //user.ExpirePasswordNow();
+                        user.PasswordNeverExpires = neverExpires;
+
+                        if (requireChange)
+                        {
+                            user.ExpirePasswordNow(); // Kích hoạt cờ "phải đổi mật khẩu"
+                        }
                         user.Save();
+                    }
+                    ;
 
-                    };
-
-                    _logger.LogDebug("Create user successfully !!!");
+                    _logger.LogInformation("Successfully created user '{username}' in OU '{ou}'", username, selectedOU);
                     return true;
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "An error occurred while resetting password for '{username}'", username);
+                // Sửa lại thông báo log cho đúng ngữ cảnh
+                _logger.LogError(ex, "An error occurred while creating user '{username}'", username);
                 return false;
             }
-
         }
 
 

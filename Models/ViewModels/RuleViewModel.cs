@@ -13,6 +13,9 @@ namespace ADPasswordManager.Models.ViewModels
 
         [Display(Name = "Managed Groups")]
         public List<string> SelectedManagedGroups { get; set; } = new List<string>();
+        
+        [Display(Name = "Managed OUs (for creating users)")]
+        public string ManagedOUs { get; set; } = string.Empty; // Dùng string để nhận dữ liệu từ textarea
 
         // Dòng dưới đây đã được XÓA
         // public SelectList AllAdGroups { get; set; } 

@@ -52,6 +52,25 @@
                 <input asp-for="ConfirmPassword" type="password" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" />
                 <span asp-validation-for="ConfirmPassword" class="text-red-600 text-sm mt-1"></span>
             </div>
+            <div class="flex items-center mb-6">
+                <input asp-for="RequirePasswordChangeOnLogon" type="checkbox" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded" />
+                <label asp-for="RequirePasswordChangeOnLogon" class="ml-2 block text-sm text-gray-900"></label>
+            </div>
+
+            <div class="flex items-center mb-6">
+                <input asp-for="SetPasswordNeverExpires" type="checkbox" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded" />
+                <label asp-for="SetPasswordNeverExpires" class="ml-2 block text-sm text-gray-900"></label>
+            </div>
+           
+
+            <div class="mb-6">
+                <label asp-for="SelectedOU" class="block text-gray-700 text-sm font-bold mb-2"></label>
+                <select asp-for="SelectedOU" asp-items="Model.AvailableOUs" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                    <option value="">-- Select an OU --</option>
+                </select>
+                <span asp-validation-for="SelectedOU" class="text-red-600 text-sm mt-1"></span>
+            </div>
+           
 
 
             <div class="flex items-center justify-end">

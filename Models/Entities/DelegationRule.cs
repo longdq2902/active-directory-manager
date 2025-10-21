@@ -13,5 +13,8 @@ namespace ADPasswordManager.Models.Entities
 
         [Required]
         public string ManagedGroups { get; set; } // Sẽ lưu dưới dạng chuỗi các nhóm, phân tách bằng dấu phẩy
+
+        [Required]
+        public string ManagedOUs { get; set; } // <-- THÊM DÒNG NÀY
     }
 }

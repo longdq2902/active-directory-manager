@@ -149,7 +149,14 @@ namespace ADPasswordManager.Controllers
         // GET: Management/CreateUser
         public IActionResult CreateUser()
         {
-            return View(new CreateUserViewModel());
+            var model = new CreateUserViewModel
+            {
+                // Gọi service để lấy danh sách OU
+                AvailableOUs = _adManagementService.GetAllOUs()
+                         .Select(ou => new SelectListItem { Text = ou, Value = ou })
+                         .ToList()
+            };
+            return View(model);
         }
 
         [HttpPost]
@@ -180,10 +187,15 @@ namespace ADPasswordManager.Controllers
             {
                 ModelState.AddModelError("EmailAddress", "The EmailAddress field is required.");
             }
+            if (string.IsNullOrEmpty(model.SelectedOU))
+            {
+                ModelState.AddModelError("SelectedOU", "The Organizational Unit field is required.");
+            }
 
             if (ModelState.IsValid)
             {
-                bool isSuccess = _adManagementService.CreateUser(model.Username, model.EmailAddress, model.FirstName, model.LastName, model.Password);
+                bool isSuccess = _adManagementService.CreateUser(model.Username, model.EmailAddress, model.FirstName, model.LastName,
+                    model.Password, model.SelectedOU,model.RequirePasswordChangeOnLogon,model.SetPasswordNeverExpires);
 
                 if (isSuccess)
                 {
@@ -196,6 +208,10 @@ namespace ADPasswordManager.Controllers
                 {
                     ModelState.AddModelError(string.Empty, "An error occurred while add the user. Please check the application logs for details.");
                 }
+                // Nếu ModelState không hợp lệ, phải nạp lại danh sách OU
+                model.AvailableOUs = _adManagementService.GetAllOUs()
+                            .Select(ou => new SelectListItem { Text = ou, Value = ou })
+                            .ToList();
 
             }
             return View(model);
