@@ -62,7 +62,8 @@ namespace ADPasswordManager.Controllers
             if (ModelState.IsValid)
             {
                 // Chuẩn hóa dữ liệu OUs: thay thế newline bằng dấu phẩy
-                var ouData = model.ManagedOUs.Replace("\r\n", ",").Replace("\n", ",");
+                var ouData = model.ManagedOUs.Replace("\r\n", ";").Replace("\n", ";");
+                _logger.LogWarning("ouData:" + ouData);
                 var newRule = new DelegationRule
                 {
                     AdminGroup = model.AdminGroup,
@@ -106,7 +107,7 @@ namespace ADPasswordManager.Controllers
                 Id = rule.Id,
                 AdminGroup = rule.AdminGroup,
                 SelectedManagedGroups = rule.ManagedGroups.Split(',', StringSplitOptions.RemoveEmptyEntries).ToList(),
-                ManagedOUs = rule.ManagedOUs?.Replace(",", System.Environment.NewLine) ?? string.Empty
+                ManagedOUs = rule.ManagedOUs?.Replace(";", System.Environment.NewLine) ?? string.Empty
             };
 
             // Trả về một PartialView để hiển thị trong iframe
@@ -136,7 +137,7 @@ namespace ADPasswordManager.Controllers
             {
                 try
                 {
-                    var ouData = model.ManagedOUs.Replace("\r\n", ",").Replace("\n", ",");
+                    var ouData = model.ManagedOUs.Replace("\r\n", ";").Replace("\n", ";");
                     var ruleToUpdate = await _context.DelegationRules.FindAsync(id);
                     if (ruleToUpdate == null)
                     {
