@@ -3,40 +3,115 @@
     ViewData["Title"] = "User Management";
 }
 
-<div id="reset-password-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
-    <div class="relative top-20 mx-auto p-5 border w-full max-w-xl shadow-lg rounded-md bg-white">
-        <div class="flex justify-between items-center border-b pb-3">
-            <h3 class="text-xl font-semibold text-gray-900">
-                Reset Password for: <span id="modal-username" class="text-indigo-600 font-bold"></span>
-            </h3>
-            <button id="close-modal-btn" class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm p-1.5 ml-auto inline-flex items-center">
-                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path></svg>
-            </button>
-        </div>
-        <div class="mt-4">
-            <iframe id="reset-password-iframe" src="about:blank" class="w-full h-96" frameborder="0"></iframe>
+<div id="reset-password-modal"
+     class="fixed inset-0 z-50 hidden"
+     role="dialog" aria-modal="true" aria-labelledby="reset-title" tabindex="-1">
+    <div class="absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity"></div>
+    <div class="relative h-full w-full flex items-center justify-center p-4">
+        <div data-panel
+             class="w-full max-w-2xl  border border-gray-200   bg-gray-200 rounded-2xl shadow-2xl ring-1 ring-black/5 overflow-hidden transform transition duration-150 ease-out opacity-0 scale-95">
+            <div class="flex items-center justify-between px-5 py-4 border-b">
+                <div class="flex items-center gap-3">
+                    <div class="h-9 w-9 inline-flex items-center justify-center rounded-xl bg-indigo-50">
+                        <svg class="h-5 w-5 text-indigo-600" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M12 11c.667-1.333 2-4 2-5a2 2 0 10-4 0c0 1 1.333 3.667 2 5zM6 21h12l-6-6-6 6z" />
+                        </svg>
+                    </div>
+                    <h3 id="reset-title" class="text-lg sm:text-xl font-semibold text-gray-900">
+                        Reset Password: <span id="modal-username" class="text-indigo-600 font-bold"></span>
+                    </h3>
+                </div>
+                <button id="close-modal-btn" type="button"
+                        class="inline-flex items-center justify-center rounded-xl p-2 text-gray-500 hover:text-gray-900 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        aria-label="Close">
+                    <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd"
+                              d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                              clip-rule="evenodd" />
+                    </svg>
+                </button>
+            </div>
+            <div class="p-0">
+                <iframe id="reset-password-iframe" src="about:blank"
+                        class="block w-full h-96 sm:h-[32rem]" frameborder="1"></iframe>
+            </div>
         </div>
     </div>
 </div>
 
-@* user model *@
-<div id="user-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
-    <div class="relative top-20 mx-auto p-5 border w-full max-w-xl shadow-lg rounded-md bg-white">
-        <div class="flex justify-between items-center border-b pb-3">
-            <h3 class="text-xl font-semibold text-gray-900">
-                <span id="modal-title-user" class="text-indigo-600 font-bold"></span>
-            </h3>
-            <button id="close-modal-user-btn" class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm p-1.5 ml-auto inline-flex items-center">
-                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path></svg>
-            </button>
-        </div>
-        <div class="mt-4">
-            <iframe id="user-iframe" src="about:blank" class="w-full h-96" frameborder="0"></iframe>
+<div id="create-user-modal"
+     class="fixed inset-0 z-50 hidden"
+     role="dialog" aria-modal="true" aria-labelledby="create-user-title" tabindex="-1">
+    <div class="absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity"></div>
+    <div class="relative h-full w-full flex items-center justify-center p-4">
+        <div data-panel
+             class="w-full max-w-7xl  border border-gray-200   bg-gray-200 rounded-2xl shadow-2xl ring-1 ring-black/5 overflow-hidden transform transition duration-150 ease-out opacity-0 scale-95">
+            <div class="flex items-center justify-between px-5 py-4 border-b">
+                <div class="flex items-center gap-3">
+                    <div class="h-9 w-9 inline-flex items-center justify-center rounded-xl bg-indigo-50">
+                        <svg class="h-5 w-5 text-indigo-600" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M12 4v16m8-8H4" />
+                        </svg>
+                    </div>
+                    <h3 id="create-user-title" class="text-lg sm:text-xl font-semibold text-gray-900">
+                        Create New User
+                    </h3>
+                </div>
+                <button id="close-modal-create-btn" type="button"
+                        class="inline-flex items-center justify-center rounded-xl p-2 text-gray-500 hover:text-gray-900 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        aria-label="Close">
+                    <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd"
+                              d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                              clip-rule="evenodd" />
+                    </svg>
+                </button>
+            </div>
+            <div class="p-0">
+                <iframe id="create-user-iframe" src="about:blank"
+                        class="block w-full h-96 sm:h-[32rem]" frameborder="1"></iframe>
+            </div>
         </div>
     </div>
 </div>
 
-
+<div id="delete-confirm-modal"
+     class="fixed inset-0 z-50 hidden"
+     role="dialog" aria-modal="true" aria-labelledby="delete-title" tabindex="-1">
+    <div class="absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity"></div>
+    <div class="relative h-full w-full flex items-center justify-center p-4">
+        <div data-panel
+             class="w-full max-w-xl  border border-gray-200   bg-gray-200 rounded-2xl shadow-2xl ring-1 ring-black/5 overflow-hidden transform transition duration-150 ease-out opacity-0 scale-95">
+            <div class="flex items-center justify-between px-5 py-4 border-b">
+                <div class="flex items-center gap-3">
+                    <div class="h-9 w-9 inline-flex items-center justify-center rounded-xl bg-red-50">
+                        <svg class="h-5 w-5 text-red-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126z" />
+                        </svg>
+                    </div>
+                    <h3 id="delete-title" class="text-lg sm:text-xl font-semibold text-gray-900">
+                        Confirm Deletion
+                    </h3>
+                </div>
+                <button id="close-modal-delete-btn" type="button"
+                        class="inline-flex items-center justify-center rounded-xl p-2 text-gray-500 hover:text-gray-900 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        aria-label="Close">
+                    <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd"
+                              d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                              clip-rule="evenodd" />
+                    </svg>
+                </button>
+            </div>
+            <div class="p-0">
+                <iframe id="delete-confirm-iframe" src="about:blank"
+                        class="block w-full max-h-60 sm:h-[32rem]" frameborder="1"></iframe>
+            </div>
+        </div>
+    </div>
+</div>
 
 
 <div class="max-w-7xl mx-auto">
@@ -44,27 +119,27 @@
 
         <div class="w-full md:w-1/4 px-4 mb-4 md:mb-0">
             <div class="bg-white shadow-md rounded-lg p-4">
-                <h2 class="text-lg font-semibold mb-4 text-gray-800 border-b pb-2">Managed Groups</h2>
-                <ul id="group-list">
+                <h2 class="text-lg font-semibold mb-4 text-gray-800 border-b pb-2">Managed OUs</h2> <ul id="ou-list">
                     <li class="mb-2">
-                        <a asp-action="Index" asp-all-route-data="null"
-                           class="filter-link block px-3 py-2 rounded-md text-gray-700 @(string.IsNullOrEmpty(Model.SelectedGroup) ? "bg-indigo-100 font-semibold" : "hover:bg-gray-100")">
+                        <a asp-action="Index"
+                           asp-route-selectedOU="" asp-route-searchTerm="@Model.SearchTerm"
+                           class="filter-link block px-3 py-2 rounded-md text-gray-700 @(string.IsNullOrEmpty(Model.SelectedOU) ? "bg-indigo-100 font-semibold" : "hover:bg-gray-100")">
                             All Users
                         </a>
                     </li>
-                    @foreach (var group in Model.ManagedGroups)
+                    @if (Model.AvailableOUs != null)
                     {
-                        <li class="mb-2">
-                            <a asp-action="Index" asp-route-selectedGroup="@group"
-                               class="filter-link block px-3 py-2 rounded-md text-gray-600 @(Model.SelectedGroup == group ? "bg-indigo-100 font-semibold" : "hover:bg-gray-100")">
-                                @group
-                            </a>
-                        </li>
+                        @foreach (var ou in Model.AvailableOUs)
+                        {
+                            <li class="mb-2">
+                                <a asp-action="Index" asp-route-selectedOU="@ou.Value" asp-route-searchTerm="@Model.SearchTerm"
+                                   class="filter-link block px-3 py-2 rounded-md text-gray-600 @(Model.SelectedOU == ou.Value ? "bg-indigo-100 font-semibold" : "hover:bg-gray-100")"> @ou.Text </a>
+                            </li>
+                        }
                     }
                 </ul>
             </div>
         </div>
-
         <div class="w-full md:w-3/4 px-4">
 
             <div class="flex justify-between items-center mb-6">
@@ -72,24 +147,23 @@
                 <div>
                     <button id="delete-selected-btn"
                             class="hidden inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700">
-                        Delete Account
+                        Delete User
                     </button>
                     <button id="add-user-btn"
                             class="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700">
-                        Add New Account
+                        Add New User
                     </button>
                 </div>
             </div>
 
             <div class="mb-4">
                 <form id="search-form" asp-action="Index" method="get" class="bg-white shadow-md rounded-lg p-4 flex items-center">
-                    <input type="hidden" name="selectedGroup" value="@Model.SelectedGroup" />
-                    <input type="search" name="searchTerm" value="@Model.SearchTerm" placeholder="Search by username or display name..."
-                           class="form-input block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50" />
+                    <input type="hidden" name="selectedOU" value="@Model.SelectedOU" /> <input type="search" name="searchTerm" value="@Model.SearchTerm" placeholder="Search by username or display name..."
+                                                                                               class="form-input block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50" />
                     <button type="submit" class="ml-4 px-4 py-2 bg-indigo-600 text-white font-semibold rounded-md hover:bg-indigo-700">
                         Search
                     </button>
-                    <a asp-action="Index" asp-route-selectedGroup="@Model.SelectedGroup" class="filter-link ml-2 px-4 py-2 bg-gray-200 text-gray-700 font-semibold rounded-md hover:bg-gray-300">
+                    <a asp-action="Index" asp-route-selectedOU="@Model.SelectedOU" class="filter-link ml-2 px-4 py-2 bg-gray-200 text-gray-700 font-semibold rounded-md hover:bg-gray-300">
                         Clear
                     </a>
 
@@ -102,9 +176,6 @@
                 </form>
             </div>
 
-           
-
-
             @if (TempData["SuccessMessage"] != null)
             {
                 <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4" role="alert">
@@ -116,11 +187,14 @@
                 <table class="min-w-full leading-normal">
                     <thead>
                         <tr class="border-b-2 border-gray-200 bg-gray-50 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                            <th class="px-5 py-3">
+                                <input type="checkbox" id="select-all-checkbox" class="form-checkbox h-4 w-4 text-indigo-600 transition duration-150 ease-in-out" />
+                            </th>
                             <th class="px-5 py-3">Username</th>
                             <th class="px-5 py-3">Display Name</th>
+                            <th class="px-5 py-3">Email</th>
                             <th class="px-5 py-3 text-center">Never Expires</th>
                             <th class="px-5 py-3 text-center">Change At Logon</th>
-                            <th class="px-5 py-3">Password Expiration</th>
                             <th class="px-5 py-3">Actions</th>
                         </tr>
                     </thead>
@@ -128,8 +202,12 @@
                         @foreach (var user in Model.Users)
                         {
                             <tr class="border-b border-gray-200 hover:bg-gray-100">
+                                <td class="px-5 py-4 text-sm">
+                                    <input type="checkbox" class="user-checkbox form-checkbox h-4 w-4 text-indigo-600 transition duration-150 ease-in-out" value="@user.Username" />
+                                </td>
                                 <td class="px-5 py-4 text-sm"><p class="text-gray-900 whitespace-no-wrap">@user.Username</p></td>
                                 <td class="px-5 py-4 text-sm"><p class="text-gray-900 whitespace-no-wrap">@user.DisplayName</p></td>
+                                <td class="px-5 py-4 text-sm"><p class="text-gray-900 whitespace-no-wrap">@user.EmailAddress</p></td>
                                 <td class="px-5 py-4 text-sm text-center">
                                     @if (user.IsPasswordNeverExpires)
                                     {
@@ -142,11 +220,7 @@
                                         <svg class="w-6 h-6 text-green-500 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                                     }
                                 </td>
-                                <td class="px-5 py-4 text-sm">
-                                    <p class="text-gray-900 whitespace-no-wrap">
-                                        @(user.PasswordExpirationDate.HasValue? user.PasswordExpirationDate.Value.ToString("dd/MM/yyyy HH:mm") : "N/A")
-                                    </p>
-                                </td>
+
                                 <td class="px-5 py-4 text-sm">
                                     <a href="@Url.Action("ResetPassword", new { username = user.Username })"
                                        data-username="@user.Username"
@@ -166,15 +240,14 @@
 @section Scripts {
     <script>
         document.addEventListener('DOMContentLoaded', function () {
+            // --- (Spinner logic giữ nguyên) ---
             const spinner = document.getElementById('loading-spinner');
-
             const searchForm = document.getElementById('search-form');
             if (searchForm) {
                 searchForm.addEventListener('submit', function() {
                     spinner.classList.remove('hidden');
                 });
             }
-
             const filterLinks = document.querySelectorAll('.filter-link');
             filterLinks.forEach(function(link) {
                 link.addEventListener('click', function() {
@@ -182,15 +255,16 @@
                 });
             });
 
-            const modal = document.getElementById('reset-password-modal');
-            const iframe = document.getElementById('reset-password-iframe');
-            const closeModalBtn = document.getElementById('close-modal-btn');
+            // --- 1. RESET PASSWORD MODAL ---
+            const resetModal = document.getElementById('reset-password-modal');
+            const resetIframe = document.getElementById('reset-password-iframe');
+            const closeResetModalBtn = document.getElementById('close-modal-btn');
             const resetLinks = document.querySelectorAll('.reset-password-link');
             const modalUsernameSpan = document.getElementById('modal-username');
 
-            const closeModal = () => {
-                modal.classList.add('hidden');
-                iframe.src = 'about:blank';
+            const closeResetModal = () => {
+                resetModal.classList.add('hidden');
+                resetIframe.src = 'about:blank';
             };
 
             resetLinks.forEach(link => {
@@ -199,98 +273,133 @@
                     const url = this.href;
                     const username = this.dataset.username;
                     modalUsernameSpan.textContent = username;
-                    iframe.src = url;
-                    modal.classList.remove('hidden');
+                    resetIframe.src = url;
+                    resetModal.classList.remove('hidden');
                 });
             });
 
-            closeModalBtn.addEventListener('click', closeModal);
-
-            modal.addEventListener('click', function(e) {
-                if (e.target === modal) {
-                    closeModal();
+            closeResetModalBtn.addEventListener('click', closeResetModal);
+            resetModal.addEventListener('click', function(e) {
+                if (e.target === resetModal) { // Chỉ đóng khi click vào backdrop
+                    closeResetModal();
                 }
             });
 
-            window.addEventListener('message', function(event) {
+            // --- 2. CREATE USER MODAL ---
+            const createUserModal = document.getElementById('create-user-modal');
+            const createUserIframe = document.getElementById('create-user-iframe');
+            const closeCreateUserModalBtn = document.getElementById('close-modal-create-btn');
+            const addUserBtn = document.getElementById('add-user-btn');
+
+            const openCreateUserModal = (url, height = '40rem') => {
+                createUserIframe.style.height = height;
+                createUserIframe.src = url;
+                createUserModal.classList.remove('hidden');
+            };
+
+            const closeCreateUserModal = () => {
+                createUserModal.classList.add('hidden');
+                createUserIframe.src = 'about:blank';
+            };
+
+            addUserBtn.addEventListener('click', () => { openCreateUserModal('@Url.Action("CreateUser")'); });
+            closeCreateUserModalBtn.addEventListener('click', closeCreateUserModal);
+            createUserModal.addEventListener('click', (e) => {
+                if (e.target === createUserModal) closeCreateUserModal();
+            });
+
+            // --- 3. DELETE CONFIRM MODAL (MỚI) ---
+            const deleteConfirmModal = document.getElementById('delete-confirm-modal');
+            const deleteConfirmIframe = document.getElementById('delete-confirm-iframe');
+            const closeDeleteModalBtn = document.getElementById('close-modal-delete-btn');
+            const deleteSelectedBtn = document.getElementById('delete-selected-btn'); // Nút này đã có
+
+            const openDeleteModal = (url, height = '30rem') => {
+                deleteConfirmIframe.style.height = height;
+                deleteConfirmIframe.src = url;
+                deleteConfirmModal.classList.remove('hidden');
+            };
+
+            const closeDeleteModal = () => {
+                deleteConfirmModal.classList.add('hidden');
+                deleteConfirmIframe.src = 'about:blank';
+            };
+
+            closeDeleteModalBtn.addEventListener('click', closeDeleteModal);
+            deleteConfirmModal.addEventListener('click', (e) => {
+                if (e.target === deleteConfirmModal) closeDeleteModal();
+            });
+
+
+            // --- 4. BỘ LẮNG NGHE MESSAGE TỪ IFRAME (Cập nhật) ---
+            window.addEventListener('message', function (event) {
+                // Từ ResetPassword.cshtml
                 if (event.data === 'resetSuccess') {
-                    closeModal();
+                    closeResetModal();
                     spinner.classList.remove('hidden');
                     window.location.reload();
                 }
+
+                // Từ CreateUser.cshtml hoặc DeleteMultipleConfirmation.cshtml
+                if (event.data === 'userSaved') {
+                    closeCreateUserModal(); // Đóng cả hai...
+                    closeDeleteModal();     // ...để chắc chắn
+                    window.location.reload();
+                }
+
+                // Từ CreateUser.cshtml hoặc DeleteMultipleConfirmation.cshtml
+                if (event.data === 'closeUserModal') {
+                    closeCreateUserModal();
+                    closeDeleteModal();
+                }
             }, false);
 
 
-            // create and delete
-
-            const iframeUser = document.getElementById('user-iframe');
-            const closeUserModalBtn = document.getElementById('close-modal-user-btn');
-            const addUserBtn = document.getElementById('add-user-btn');
-            const userModal = document.getElementById('user-modal');
-            
-            const modalTitle = document.getElementById('modal-title-user');
-
-            const openUserModal = (url, title, height = '40rem') => {
-                // modalTitle.textContent = title;
-                iframeUser.style.height = height;
-                iframeUser.src = url;
-                userModal.classList.remove('hidden');
-            };
-            const closeUserModal = () => {
-                userModal.classList.add('hidden');
-                iframe.src = 'about:blank';
-            };
-
-            addUserBtn.addEventListener('click', () => { openUserModal('@Url.Action("CreateUser")', 'Add New User'); });
-            // document.querySelectorAll('.edit-rule-btn').forEach(btn => {
-            //     btn.addEventListener('click', (e) => { e.preventDefault(); openRuleModal(e.currentTarget.href, 'Edit Rule'); });
-            // });
-            // document.querySelectorAll('.delete-user-btn').forEach(btn => {
-            //     btn.addEventListener('click', (e) => { e.preventDefault(); openRuleModal(e.currentTarget.href, 'Confirm Deletion', '20rem'); });
-            // });
-
-            closeUserModalBtn.addEventListener('click', closeUserModal);
-            userModal.addEventListener('click', (e) => { if (e.target === userModal) closeUserModal(); });
-            window.addEventListener('message', function (event) {
-                if (event.data === 'userSaved') { closeUserModal(); window.location.reload(); }
-                if (event.data === 'closeUserModal') { closeUserModal(); }
-            }, false);
-
-            // --- SCRIPT CẬP NHẬT CHO XÓA HÀNG LOẠT ---
+            // --- 5. SCRIPT XÓA HÀNG LOẠT (Cập nhật) ---
             const selectAllCheckbox = document.getElementById('select-all-checkbox');
             const userCheckboxes = document.querySelectorAll('.user-checkbox');
-            const deleteSelectedBtn = document.getElementById('delete-selected-btn');
 
             function toggleDeleteButton() {
-                const anyChecked = Array.from(ruleCheckboxes).some(cb => cb.checked);
+                const anyChecked = Array.from(userCheckboxes).some(cb => cb.checked);
                 deleteSelectedBtn.classList.toggle('hidden', !anyChecked);
             }
 
-            selectAllCheckbox.addEventListener('change', function () {
-                userCheckboxes.forEach(checkbox => { checkbox.checked = this.checked; });
-                toggleDeleteButton();
-            });
+            // Thêm "if" để sửa lỗi trong ảnh
+            if (selectAllCheckbox) {
+                selectAllCheckbox.addEventListener('change', function () {
+                    userCheckboxes.forEach(checkbox => { checkbox.checked = this.checked; });
+                    toggleDeleteButton();
+                });
+            }
 
             userCheckboxes.forEach(checkbox => {
                 checkbox.addEventListener('change', function () {
-                    if (!this.checked) { selectAllCheckbox.checked = false; }
-                    else { selectAllCheckbox.checked = Array.from(ruleCheckboxes).every(cb => cb.checked); }
+                    if (!this.checked) {
+                        if (selectAllCheckbox) selectAllCheckbox.checked = false;
+                    }
+                    else {
+                        if (selectAllCheckbox) selectAllCheckbox.checked = Array.from(userCheckboxes).every(cb => cb.checked);
+                    }
                     toggleDeleteButton();
                 });
             });
 
-            deleteSelectedBtn.addEventListener('click', function (e) {
-                e.preventDefault();
-                const checkedIds = Array.from(ruleCheckboxes)
-                    .filter(cb => cb.checked)
-                    .map(cb => cb.value);
+            // Thêm "if" để sửa lỗi
+            if (deleteSelectedBtn) {
+                deleteSelectedBtn.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    const checkedIds = Array.from(userCheckboxes)
+                        .filter(cb => cb.checked)
+                        .map(cb => cb.value);
 
-                if (checkedIds.length > 0) {
-                    let url = '@Url.Action("DeleteMultipleConfirmation")' + '?' + checkedIds.map(id => 'userIds=' + id).join('&');
-                    openRuleModal(url, 'Confirm Multiple Deletion', '30rem');
-                }
-            });
+                    if (checkedIds.length > 0) {
+                        let url = '@Url.Action("DeleteMultipleConfirmation")' + '?' + checkedIds.map(id => 'userIds=' + encodeURIComponent(id)).join('&');
 
+                        // SỬA: Gọi hàm modal xóa mới
+                        openDeleteModal(url);
+                    }
+                });
+            }
         });
     </script>
 }

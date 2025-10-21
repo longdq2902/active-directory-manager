@@ -1,90 +1,132 @@
 ﻿@model ADPasswordManager.Models.ViewModels.CreateUserViewModel
 @{
-    // Dùng một layout trống vì trang này sẽ hiển thị trong iframe
+    // Hiển thị trong iframe
     Layout = null;
 }
-
 <!DOCTYPE html>
 <html>
 <head>
     <meta name="viewport" content="width=device-width" />
-    <title>Create User</title>
+    @* <title>Create User</title> *@
     <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        html, body {
+            height: 100%;
+        }
+        /* để h-full hoạt động trong iframe */
+    </style>
 </head>
-<body class="bg-gray-50 p-4">
-    <div class="w-full">
-        <form asp-controller="Management" asp-action="CreateUser" method="post">
-            <div asp-validation-summary="ModelOnly" class="text-red-600 text-sm mb-4"></div>
-
-            <div class="mb-4">
-                <label asp-for="Username" class="block text-gray-700 text-sm font-bold mb-2"></label>
-                <input asp-for="Username" type="text" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" />
-                <span asp-validation-for="Username" class="text-red-600 text-sm mt-1"></span>
-            </div>
-
-            <div class="mb-6">
-                <label asp-for="FirstName" class="block text-gray-700 text-sm font-bold mb-2"></label>
-                <input asp-for="FirstName" type="text" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" />
-                <span asp-validation-for="FirstName" class="text-red-600 text-sm mt-1"></span>
-            </div>
-
-            <div class="mb-6">
-                <label asp-for="LastName" class="block text-gray-700 text-sm font-bold mb-2"></label>
-                <input asp-for="LastName" type="text" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" />
-                <span asp-validation-for="LastName" class="text-red-600 text-sm mt-1"></span>
-            </div>
-
-            <div class="mb-6">
-                <label asp-for="EmailAddress" class="block text-gray-700 text-sm font-bold mb-2"></label>
-                <input asp-for="EmailAddress" type="email" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" />
-                <span asp-validation-for="EmailAddress" class="text-red-600 text-sm mt-1"></span>
-            </div>
+<body class="bg-white h-full">
+    <!-- Container phủ toàn bộ iframe, chỉ cuộn 1 nơi -->
+    <div class="w-full h-full overflow-auto">
+        <!-- Card gọn; KHÔNG dùng max-w-*, mx-auto để tránh bó hẹp -->
+        <div class="bg-white border border-gray-200 shadow-sm">
+            <!-- Header -->
 
 
-            <div class="mb-6">
-                <label asp-for="Password" class="block text-gray-700 text-sm font-bold mb-2"></label>
-                <input asp-for="Password" type="password" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" />
-                <span asp-validation-for="Password" class="text-red-600 text-sm mt-1"></span>
-            </div>
+            <form asp-controller="Management" asp-action="CreateUser" method="post" class="p-6">
+                <div asp-validation-summary="ModelOnly" class="text-red-600 text-sm mb-4"></div>
 
-            <div class="mb-6">
-                <label asp-for="ConfirmPassword" class="block text-gray-700 text-sm font-bold mb-2"></label>
-                <input asp-for="ConfirmPassword" type="password" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" />
-                <span asp-validation-for="ConfirmPassword" class="text-red-600 text-sm mt-1"></span>
-            </div>
-            <div class="flex items-center mb-6">
-                <input asp-for="RequirePasswordChangeOnLogon" type="checkbox" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded" />
-                <label asp-for="RequirePasswordChangeOnLogon" class="ml-2 block text-sm text-gray-900"></label>
-            </div>
+                <!-- GRID 2 cột; phần tử cuối tự span-2 nếu tổng số lẻ -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:[&>div:last-child]:col-span-2">
 
-            <div class="flex items-center mb-6">
-                <input asp-for="SetPasswordNeverExpires" type="checkbox" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded" />
-                <label asp-for="SetPasswordNeverExpires" class="ml-2 block text-sm text-gray-900"></label>
-            </div>
-           
+                    <!-- Username -->
+                    <div>
+                        <label asp-for="Username" class="block text-gray-700 text-sm font-medium mb-1"></label>
+                        <input asp-for="Username" type="text"
+                               class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" />
+                        <span asp-validation-for="Username" class="text-red-600 text-xs mt-1 block"></span>
+                    </div>
 
-            <div class="mb-6">
-                <label asp-for="SelectedOU" class="block text-gray-700 text-sm font-bold mb-2"></label>
-                <select asp-for="SelectedOU" asp-items="Model.AvailableOUs" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
-                    <option value="">-- Select an OU --</option>
-                </select>
-                <span asp-validation-for="SelectedOU" class="text-red-600 text-sm mt-1"></span>
-            </div>
-           
+                    <!-- FirstName -->
+                    <div>
+                        <label asp-for="FirstName" class="block text-gray-700 text-sm font-medium mb-1"></label>
+                        <input asp-for="FirstName" type="text"
+                               class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" />
+                        <span asp-validation-for="FirstName" class="text-red-600 text-xs mt-1 block"></span>
+                    </div>
 
+                    <!-- LastName -->
+                    <div>
+                        <label asp-for="LastName" class="block text-gray-700 text-sm font-medium mb-1"></label>
+                        <input asp-for="LastName" type="text"
+                               class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" />
+                        <span asp-validation-for="LastName" class="text-red-600 text-xs mt-1 block"></span>
+                    </div>
 
-            <div class="flex items-center justify-end">
-                <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
-                    Create User
-                </button>
-            </div>
-        </form>
+                    <!-- EmailAddress -->
+                    <div>
+                        <label asp-for="EmailAddress" class="block text-gray-700 text-sm font-medium mb-1"></label>
+                        <input asp-for="EmailAddress" type="email"
+                               class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" />
+                        <span asp-validation-for="EmailAddress" class="text-red-600 text-xs mt-1 block"></span>
+                    </div>
+
+                    <!-- Password -->
+                    <div>
+                        <label asp-for="Password" class="block text-gray-700 text-sm font-medium mb-1"></label>
+                        <input asp-for="Password" type="password"
+                               class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" />
+                        <span asp-validation-for="Password" class="text-red-600 text-xs mt-1 block"></span>
+                    </div>
+
+                    <!-- ConfirmPassword -->
+                    <div>
+                        <label asp-for="ConfirmPassword" class="block text-gray-700 text-sm font-medium mb-1"></label>
+                        <input asp-for="ConfirmPassword" type="password"
+                               class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" />
+                        <span asp-validation-for="ConfirmPassword" class="text-red-600 text-xs mt-1 block"></span>
+                    </div>
+
+                    <!-- Checkboxes: span 2 cột -->
+                    <div class="md:col-span-2">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <label class="flex items-center gap-2 rounded-lg border border-gray-200 p-3 hover:bg-gray-50">
+                                <input asp-for="RequirePasswordChangeOnLogon" type="checkbox"
+                                       class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded" />
+                                <span class="text-sm text-gray-900">
+                                    @Html.DisplayNameFor(m => m.RequirePasswordChangeOnLogon)
+                                </span>
+                            </label>
+
+                            <label class="flex items-center gap-2 rounded-lg border border-gray-200 p-3 hover:bg-gray-50">
+                                <input asp-for="SetPasswordNeverExpires" type="checkbox"
+                                       class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded" />
+                                <span class="text-sm text-gray-900">
+                                    @Html.DisplayNameFor(m => m.SetPasswordNeverExpires)
+                                </span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- SelectedOU -->
+                    <div>
+                        <label asp-for="SelectedOU" class="block text-gray-700 text-sm font-medium mb-1"></label>
+                        <select asp-for="SelectedOU" asp-items="Model.AvailableOUs"
+                                class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                            <option value="">-- Select an OU --</option>
+                        </select>
+                        <span asp-validation-for="SelectedOU" class="text-red-600 text-xs mt-1 block"></span>
+                    </div>
+
+                    <!-- Submit (luôn span 2 cột) -->
+                    <div class="md:col-span-2">
+                        <div class="flex items-center justify-end gap-3 pt-2">
+                            <button type="submit"
+                                    class="inline-flex items-center justify-center bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                                Create User
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
     </div>
 
     @if (ViewBag.ResetSuccess == true)
     {
         <script>
-            // Gửi thông điệp về cho cửa sổ cha
+            // Nếu cần báo về trang cha
             window.parent.postMessage('resetSuccess', '*');
         </script>
     }
@@ -93,6 +135,12 @@
         @{
             await Html.RenderPartialAsync("_ValidationScriptsPartial");
         }
+        <script>
+            // Khi submit thành công (server redirect lại view này với flag riêng của bạn),
+            // hãy post về cha để đóng modal + reload. Ví dụ:
+            @* if (TempData["UserCreated"] == true) window.parent.postMessage('userSaved','*'); *@
+        </script>
     }
+    </section>
 </body>
 </html>

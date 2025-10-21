@@ -1,0 +1,57 @@
+﻿@model ADPasswordManager.Models.ViewModels.DeleteMultipleViewModel
+
+@{
+    Layout = null; // Quan trọng: Không sử dụng layout chính
+}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width" />
+    @* <title>Confirm Deletion</title> *@
+    <link href="~/css/site.css" rel="stylesheet" />
+</head>
+<body class="p-4 bg-gray-50">
+
+    @* <h2 class="text-xl font-bold text-red-700 mb-4">Confirm Deletion</h2> *@
+    <p class="text-gray-700 mb-4">Are you sure you want to permanently delete the following user(s)? This action cannot be undone.</p>
+
+    @if (Model.UserIds != null && Model.UserIds.Any())
+    {
+        <ul class="list-disc list-inside bg-white p-4 rounded shadow mb-4 max-h-48 overflow-y-auto">
+            @foreach (var userId in Model.UserIds)
+            {
+                <li class="font-mono text-gray-900">@userId</li>
+            }
+        </ul>
+
+        <form asp-action="DeleteMultiple" method="post">
+            @Html.AntiForgeryToken()
+
+            @foreach (var userId in Model.UserIds)
+            {
+                <input type="hidden" name="UserIds" value="@userId" />
+            }
+
+            <div class="flex justify-end space-x-4">
+                <button type="button" onclick="window.parent.postMessage('closeUserModal', '*');" class="filter-link ml-2 px-4 py-2 bg-gray-200 text-gray-700 font-semibold rounded-md hover:bg-gray-300"   >
+                    Cancel
+                </button>
+                <button type="submit" class="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700">
+                    Yes
+                </button>
+            </div>
+        </form>
+    }
+    else
+    {
+        <p class="text-red-500">No users were selected.</p>
+        <div class="flex justify-end mt-4">
+            <button type="button" onclick="window.parent.postMessage('closeUserModal', '*');" class="px-4 py-2 bg-gray-300 text-gray-800 rounded-md hover:bg-gray-400">
+                Close
+            </button>
+        </div>
+    }
+
+</body>
+</html>
