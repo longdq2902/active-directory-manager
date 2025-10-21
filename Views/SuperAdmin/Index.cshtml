@@ -66,12 +66,17 @@
                                     }
                                 </div>
                             </td>
-                            <td class="px-5 py-4 text-sm">
+                            <td class="px-5 py-4 text-sm ">
                                 <div class="flex flex-wrap gap-2">
-                                    @foreach (var group in rule.ManagedOUs.Split(',', StringSplitOptions.RemoveEmptyEntries))
+                                    @foreach (var group in rule.ManagedOUs.Split(';', StringSplitOptions.RemoveEmptyEntries))
                                     {
-                                        <span class="px-2 py-1 bg-gray-200 text-gray-800 text-xs font-medium rounded-full">@group</span>
+                                        @* <div class="px-2 py-1 bg-gray-200 text-gray-800 text-xs font-medium rounded-full whitespace-nowrap">@group</div> *@
+                                        @* <div class="px-2 py-1 bg-gray-200 text-gray-800 text-xs font-medium rounded-full whitespace-nowrap"><text>@group.Trim()</text><br /></div> *@
+                                        <div class="px-2 py-1 bg-gray-200 text-gray-800 text-xs font-medium rounded-full mb-1">
+                                            @group.Trim()
+                                        </div>
                                     }
+                                   
                                 </div>
                             </td>
                             <td class="px-5 py-4 text-sm">
