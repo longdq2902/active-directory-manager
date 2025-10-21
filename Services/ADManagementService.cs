@@ -359,6 +359,123 @@ namespace ADPasswordManager.Services
             }
         }
 
+        public bool EditUser(string username, string email, string firstName, string lastName, string password, string selectedOU, bool requireChange, bool neverExpires) // Thêm tham số selectedOU
+        {
+            _logger.LogInformation("Attempting to edit user '{username}' in OU: {ou}", username, selectedOU);
+            try
+            {
+                // DÙNG selectedOU thay vì _serviceOU
+                using (var pContext = new PrincipalContext(ContextType.Domain, _domain, selectedOU, _serviceUser, _servicePassword))
+                {
+                    var userPrincipal = UserPrincipal.FindByIdentity(pContext, IdentityType.SamAccountName, username);
+                    if (userPrincipal == null)
+                    {
+                        _logger.LogWarning("User '{username}' not found in this OU. Edit user failed.", username);
+                        return false;
+                    }
+
+                    // Cập nhật thông tin người dùng
+                    userPrincipal.EmailAddress = email;
+                    userPrincipal.DisplayName = $"{firstName} {lastName}";
+                    userPrincipal.GivenName = firstName;
+                    userPrincipal.Surname = lastName;
+                    userPrincipal.PasswordNeverExpires = neverExpires;
+
+                    if (!string.IsNullOrEmpty(password))
+                    {
+                        userPrincipal.SetPassword(password);
+                    }
+
+                    if (requireChange)
+                    {
+                        userPrincipal.ExpirePasswordNow();
+                    }
+
+                    userPrincipal.Save();
+
+                    _logger.LogInformation("Successfully edited user '{username}' in OU '{ou}'", username, selectedOU);
+                    return true;
+                }
+            }
+            catch (Exception ex)
+            {
+                // Sửa lại thông báo log cho đúng ngữ cảnh
+                _logger.LogError(ex, "An error occurred while editing user '{username}'", username);
+                return false;
+            }
+        }
+
+
+        public UserPrincipal GetUserByUsername(string username)
+        {
+            _logger.LogInformation("Fetching user by username: {username}", username);
+
+            if (string.IsNullOrEmpty(_domain) || string.IsNullOrEmpty(_serviceUser) || string.IsNullOrEmpty(_servicePassword))
+            {
+                _logger.LogError("AD settings (Domain, ServiceUser, ServicePassword) are not fully configured.");
+                return null;
+            }
+
+            try
+            {
+                using (var context = new PrincipalContext(ContextType.Domain, _domain, _serviceUser, _servicePassword))
+                {
+                    var user = UserPrincipal.FindByIdentity(context, IdentityType.SamAccountName, username);
+                    if (user != null)
+                    {
+                        _logger.LogInformation("User '{username}' found in AD.", username);
+                        return user;
+                    }
+                    else
+                    {
+                        _logger.LogWarning("User '{username}' not found in AD.", username);
+                        return null;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while fetching user '{username}'", username);
+                return null;
+            }
+        }
+
+        
+        public bool DeleteUser(string username)
+        {
+            _logger.LogInformation("Attempting to delete user '{username}' from Active Directory.", username);
+
+            if (string.IsNullOrEmpty(_domain) || string.IsNullOrEmpty(_serviceUser) || string.IsNullOrEmpty(_servicePassword))
+            {
+                _logger.LogError("AD settings (Domain, ServiceUser, ServicePassword) are not fully configured.");
+                return false;
+            }
+
+            try
+            {
+                using (var context = new PrincipalContext(ContextType.Domain, _domain, _serviceUser, _servicePassword))
+                {
+                    var user = UserPrincipal.FindByIdentity(context, IdentityType.SamAccountName, username);
+                    if (user == null)
+                    {
+                        _logger.LogWarning("User '{username}' not found in AD. Delete aborted.", username);
+                        return false;
+                    }
+
+                    user.Delete();
+                    _logger.LogInformation("Successfully deleted user '{username}' from AD.", username);
+                    return true;
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "An error occurred while deleting user '{username}'", username);
+                return false;
+            }
+        }
+
+
+
 
 
 

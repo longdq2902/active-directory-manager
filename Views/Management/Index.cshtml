@@ -153,7 +153,12 @@
                                        class="reset-password-link text-indigo-600 hover:text-indigo-900 font-semibold">
                                         Reset Password
                                     </a>
+                                    <a asp-action="Edit" asp-route-id="@user.Username"
+                                       class="edit-rule-btn text-indigo-600 hover:text-indigo-900 mr-4 font-semibold">Edit</a>
+                                    <a asp-action="Delete" asp-route-id="@user.Username"
+                                       class="delete-rule-btn text-red-600 hover:text-red-900 font-semibold">Delete</a>
                                 </td>
+                                
                             </tr>
                         }
                     </tbody>

@@ -8,12 +8,14 @@
 <html>
 <head>
     <meta name="viewport" content="width=device-width" />
-    <title>Create User</title>
+    <title>
+        @(Model.IsEdit ? "Edit User" : "Create User")
+    </title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gray-50 p-4">
     <div class="w-full">
-        <form asp-controller="Management" asp-action="CreateUser" method="post">
+        <form asp-controller="Management" asp-action="@(Model.IsEdit ? "EditUser" : "CreateUser")" method="post">
             <div asp-validation-summary="ModelOnly" class="text-red-600 text-sm mb-4"></div>
 
             <div class="mb-4">
@@ -40,18 +42,22 @@
                 <span asp-validation-for="EmailAddress" class="text-red-600 text-sm mt-1"></span>
             </div>
 
+            @if (!Model.IsEdit)
+            {
+                <div class="mb-6">
+                    <label asp-for="Password" class="block text-gray-700 text-sm font-bold mb-2"></label>
+                    <input asp-for="Password" type="password" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" />
+                    <span asp-validation-for="Password" class="text-red-600 text-sm mt-1"></span>
+                </div>
 
-            <div class="mb-6">
-                <label asp-for="Password" class="block text-gray-700 text-sm font-bold mb-2"></label>
-                <input asp-for="Password" type="password" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" />
-                <span asp-validation-for="Password" class="text-red-600 text-sm mt-1"></span>
-            </div>
+                <div class="mb-6">
+                    <label asp-for="ConfirmPassword" class="block text-gray-700 text-sm font-bold mb-2"></label>
+                    <input asp-for="ConfirmPassword" type="password" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" />
+                    <span asp-validation-for="ConfirmPassword" class="text-red-600 text-sm mt-1"></span>
+                </div>
+            }
 
-            <div class="mb-6">
-                <label asp-for="ConfirmPassword" class="block text-gray-700 text-sm font-bold mb-2"></label>
-                <input asp-for="ConfirmPassword" type="password" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" />
-                <span asp-validation-for="ConfirmPassword" class="text-red-600 text-sm mt-1"></span>
-            </div>
+            
             <div class="flex items-center mb-6">
                 <input asp-for="RequirePasswordChangeOnLogon" type="checkbox" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded" />
                 <label asp-for="RequirePasswordChangeOnLogon" class="ml-2 block text-sm text-gray-900"></label>
@@ -62,20 +68,26 @@
                 <label asp-for="SetPasswordNeverExpires" class="ml-2 block text-sm text-gray-900"></label>
             </div>
            
+            @if (!Model.IsEdit)
+            {
+                <div class="mb-6">
+                    <label asp-for="SelectedOU" class="block text-gray-700 text-sm font-bold mb-2"></label>
+                    <select asp-for="SelectedOU" asp-items="Model.AvailableOUs" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                        <option value="">-- Select an OU --</option>
+                    </select>
+                    <span asp-validation-for="SelectedOU" class="text-red-600 text-sm mt-1"></span>
+                </div>
+            }
 
-            <div class="mb-6">
-                <label asp-for="SelectedOU" class="block text-gray-700 text-sm font-bold mb-2"></label>
-                <select asp-for="SelectedOU" asp-items="Model.AvailableOUs" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
-                    <option value="">-- Select an OU --</option>
-                </select>
-                <span asp-validation-for="SelectedOU" class="text-red-600 text-sm mt-1"></span>
-            </div>
            
 
 
             <div class="flex items-center justify-end">
                 <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
-                    Create User
+                    @(Model.IsEdit ? "Update User" : "Create User")
+                </button>
+                <button type="button" id="btn-create-user-cancel" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                    Cancel
                 </button>
             </div>
         </form>

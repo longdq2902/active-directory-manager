@@ -40,5 +40,7 @@ namespace ADPasswordManager.Models.ViewModels
         public bool RequirePasswordChangeOnLogon { get; set; } = true; // Mặc định là true (phải đổi)
 
         public List<SelectListItem> AvailableOUs { get; set; } = new List<SelectListItem>();
+
+        public bool IsEdit { get; set; } = false;
     }
 }

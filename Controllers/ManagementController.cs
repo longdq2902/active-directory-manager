@@ -216,5 +216,248 @@ namespace ADPasswordManager.Controllers
             }
             return View(model);
         }
+
+
+        // GET: Management/CreateUser
+        public IActionResult EditUser(string username)
+        {
+            if (string.IsNullOrEmpty(username))
+            {
+                return BadRequest("Username is required to edit user.");
+            }
+
+            var user = _adManagementService.GetUserByUsername(username);
+            if (user == null)
+            {
+                return NotFound($"User '{username}' not found.");
+            }
+
+            var model = new CreateUserViewModel
+            {
+                Username = user.SamAccountName,
+                EmailAddress = user.EmailAddress,
+                FirstName = user.GivenName,
+                LastName = user.Surname,
+                
+                //SelectedOU = user.DistinguishedName,
+                SetPasswordNeverExpires = user.PasswordNeverExpires,
+                //RequirePasswordChangeOnLogon = user.PasswordNeverExpires,
+                AvailableOUs = _adManagementService.GetAllOUs()
+                    .Select(ou => new SelectListItem
+                    {
+                        Text = ou,
+                        Value = ou,
+                        Selected = ou == user.DistinguishedName // đánh dấu OU hiện tại
+                    }).ToList()
+            };
+
+            return View(model);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult EditUser(CreateUserViewModel model)
+        {
+            if (string.IsNullOrEmpty(model.Username))
+            {
+                ModelState.AddModelError("Username", "The Username field is required.");
+            }
+
+            if (string.IsNullOrEmpty(model.FirstName))
+            {
+                ModelState.AddModelError("FirstName", "The FirstName field is required.");
+            }
+
+            if (string.IsNullOrEmpty(model.LastName))
+            {
+                ModelState.AddModelError("LastName", "The LastName field is required.");
+            }
+
+            if (string.IsNullOrEmpty(model.Password))
+            {
+                ModelState.AddModelError("Password", "The Password field is required.");
+            }
+
+            if (string.IsNullOrEmpty(model.EmailAddress))
+            {
+                ModelState.AddModelError("EmailAddress", "The EmailAddress field is required.");
+            }
+            if (string.IsNullOrEmpty(model.SelectedOU))
+            {
+                ModelState.AddModelError("SelectedOU", "The Organizational Unit field is required.");
+            }
+
+            if (ModelState.IsValid)
+            {
+                bool isSuccess = _adManagementService.EditUser(model.Username, model.EmailAddress, model.FirstName, model.LastName,
+                    model.Password, model.SelectedOU, model.RequirePasswordChangeOnLogon, model.SetPasswordNeverExpires);
+
+                if (isSuccess)
+                {
+                    // View sẽ dùng JavaScript để gửi thông điệp về cho trang chính
+                    ViewBag.ResetSuccess = true;
+                    TempData["SuccessMessage"] = $"Edit user '{model.Username}' is successfully.";
+                    return View(model);
+                }
+                else
+                {
+                    ModelState.AddModelError(string.Empty, "An error occurred while add the user. Please check the application logs for details.");
+                }
+                // Nếu ModelState không hợp lệ, phải nạp lại danh sách OU
+                model.AvailableOUs = _adManagementService.GetAllOUs()
+                            .Select(ou => new SelectListItem { Text = ou, Value = ou })
+                            .ToList();
+
+            }
+            return View(model);
+        }
+
+        // GET: Management/Delete/username
+        public async Task<IActionResult> Delete(string username)
+        {
+            if (string.IsNullOrEmpty(username))
+            {
+                return NotFound();
+            }
+
+            // Gọi service để lấy thông tin người dùng từ AD hoặc database
+            var user = _adManagementService.GetUserByUsername(username);
+            if (user == null)
+            {
+                return NotFound($"User '{username}' not found.");
+            }
+
+            // Tạo ViewModel để hiển thị thông tin xác nhận xóa
+            var model = new DeleteUserViewModel
+            {
+                Username = user.SamAccountName,
+                EmailAddress = user.EmailAddress
+            };
+
+            // Trả về view xác nhận xóa
+            return View(model);
+        }
+
+
+        [HttpPost, ActionName("Delete")]
+        [ValidateAntiForgeryToken]
+        public IActionResult DeleteConfirmed(string username)
+        {
+            if (string.IsNullOrEmpty(username))
+            {
+                return NotFound("Username is required.");
+            }
+
+            var user = _adManagementService.GetUserByUsername(username);
+            if (user == null)
+            {
+                ViewBag.DeleteSuccess = false;
+                ViewBag.ErrorMessage = $"User '{username}' not found in Active Directory.";
+                return View("Delete", new DeleteUserViewModel { Username = username });
+            }
+
+            bool deleted = _adManagementService.DeleteUser(username);
+            if (deleted)
+            {
+                TempData["SuccessMessage"] = $"User '{username}' deleted successfully.";
+                ViewBag.DeleteSuccess = true;
+            }
+            else
+            {
+                ViewBag.DeleteSuccess = false;
+                ViewBag.ErrorMessage = $"Failed to delete user '{username}'.";
+            }
+
+            var model = new DeleteUserViewModel
+            {
+                Username = user.SamAccountName,
+                EmailAddress = user.EmailAddress
+            };
+
+            return View("Delete", model);
+        }
+
+        // POST: Management/DeleteMultiple
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult DeleteMultiple(IEnumerable<string> usernames)
+        {
+            if (usernames == null || !usernames.Any())
+            {
+                TempData["ErrorMessage"] = "Please select at least one user to delete.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            var deletedUsers = new List<DeleteUserViewModel>();
+            var failedUsers = new List<string>();
+
+            foreach (var username in usernames)
+            {
+                var user = _adManagementService.GetUserByUsername(username);
+                if (user == null)
+                {
+                    failedUsers.Add(username);
+                    continue;
+                }
+
+                bool deleted = _adManagementService.DeleteUser(username);
+                if (deleted)
+                {
+                    deletedUsers.Add(new DeleteUserViewModel
+                    {
+                        Username = user.SamAccountName,
+                        EmailAddress = user.EmailAddress
+                    });
+                }
+                else
+                {
+                    failedUsers.Add(username);
+                }
+            }
+
+            ViewBag.DeleteSuccess = deletedUsers.Any();
+            ViewBag.FailedUsers = failedUsers;
+            TempData["SuccessMessage"] = $"{deletedUsers.Count} user(s) deleted successfully.";
+            TempData["ErrorMessage"] = failedUsers.Any()
+                ? $"{failedUsers.Count} user(s) could not be deleted."
+                : null;
+
+            return View("DeleteMultipleConfirmation", deletedUsers);
+        }
+
+
+        /// GET: Management/DeleteMultipleConfirmation
+        public IActionResult DeleteMultipleConfirmation(IEnumerable<string> usernames)
+        {
+            if (usernames == null || !usernames.Any())
+            {
+                return BadRequest("No users selected for deletion.");
+            }
+
+            var usersToDelete = new List<DeleteUserViewModel>();
+
+            foreach (var username in usernames)
+            {
+                var user = _adManagementService.GetUserByUsername(username);
+                if (user != null)
+                {
+                    usersToDelete.Add(new DeleteUserViewModel
+                    {
+                        Username = user.SamAccountName,
+                        EmailAddress = user.EmailAddress
+                    });
+                }
+            }
+
+            if (!usersToDelete.Any())
+            {
+                return NotFound("No valid users found for deletion.");
+            }
+
+            // Truyền danh sách người dùng đến View để xác nhận
+            return View(usersToDelete);
+        }
+
+
     }
 }
