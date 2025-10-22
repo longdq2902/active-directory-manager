@@ -50,11 +50,12 @@ namespace ADPasswordManager.Services
                 string resetLink = $"{publicUrl.TrimEnd('/')}/PublicReset/Reset?token={token}";
 
                 // 3. Tạo bản ghi token
+                int tokenLifetimeMinutes = _configuration.GetValue<int>("TaskSettings:TokenLifetimeMinutes", 15);
                 var tokenRecord = new PasswordResetToken
                 {
                     Username = username,
                     Token = token,
-                    ExpiryTimestamp = DateTime.UtcNow.AddMinutes(15), // Token có hạn 15 phút
+                    ExpiryTimestamp = DateTime.UtcNow.AddMinutes(tokenLifetimeMinutes),
                     IsUsed = false
                 };
 
@@ -67,7 +68,7 @@ namespace ADPasswordManager.Services
                 string body = $@"
                     <p>Hello,</p>
                     <p>We received a request to reset the password for your account <strong>{username}</strong>.</p>
-                    <p>Please click the link below to set a new password. This link will expire in 15 minutes.</p>
+                    <p>Please click the link below to set a new password. This link will expire in {tokenLifetimeMinutes} minutes.</p>
                     <p><a href='{resetLink}'><strong>RESET YOUR PASSWORD</strong></a></p>
                     <p>If you did not request this, please ignore this email.</p>
                     <p>Regards,<br>AD Management System</p>"; 
