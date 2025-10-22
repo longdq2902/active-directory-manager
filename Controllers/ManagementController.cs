@@ -24,68 +24,131 @@ namespace ADPasswordManager.Controllers
         }
 
         // Thêm 2 tham số để nhận giá trị từ URL
-        public IActionResult Index(string selectedGroup, string searchTerm)
+        //public IActionResult Index(string selectedGroup, string searchTerm)
+        //{
+        //    var adminUsername = User.Identity?.Name;
+        //    if (string.IsNullOrEmpty(adminUsername))
+        //    {
+        //        return Unauthorized("Cannot determine the current user.");
+        //    }
+
+        //    var samAccountName = adminUsername.Contains('\\') ? adminUsername.Split('\\')[1] : adminUsername;
+
+        //    _logger.LogInformation("Fetching data for admin: {admin}", samAccountName);
+
+        //    var managedGroups = _adManagementService.GetManagedGroupNamesForAdmin(samAccountName);
+
+        //    // Truyền tham số lọc vào service
+        //    List<UserPrincipal> managedUsers = _adManagementService.GetManagedUsersForAdmin(samAccountName, selectedGroup, searchTerm);
+
+        //    var userViewModels = managedUsers.Select(user =>
+        //    {
+        //        // ... (logic tính ngày hết hạn không thay đổi)
+        //        DateTime? expirationDate = null;
+        //        if (user.PasswordNeverExpires == false)
+        //        {
+        //            try
+        //            {
+        //                var de = user.GetUnderlyingObject() as DirectoryEntry;
+        //                if (de != null)
+        //                {
+        //                    var expiryTimeComputed = de.Properties["msDS-UserPasswordExpiryTimeComputed"].Value;
+        //                    if (expiryTimeComputed != null && expiryTimeComputed is long expiryTicks)
+        //                    {
+        //                        if (expiryTicks > 0 && expiryTicks != 9223372036854775807)
+        //                        {
+        //                            expirationDate = DateTime.FromFileTime(expiryTicks);
+        //                        }
+        //                    }
+        //                }
+        //            }
+        //            catch (Exception ex)
+        //            {
+        //                _logger.LogWarning(ex, "Could not determine password expiration for user {user}", user.SamAccountName);
+        //                expirationDate = null;
+        //            }
+        //        }
+
+        //        return new UserViewModel
+        //        {
+        //            Username = user.SamAccountName,
+        //            DisplayName = user.DisplayName,
+        //            EmailAddress = user.EmailAddress,
+        //            IsPasswordNeverExpires = user.PasswordNeverExpires,
+        //            IsPasswordChangeRequired = (user.LastPasswordSet == null),
+        //            PasswordExpirationDate = expirationDate
+        //        };
+        //    }).ToList();
+
+        //    var viewModel = new UserManagementViewModel
+        //    {
+        //        Users = userViewModels,
+        //        ManagedGroups = managedGroups,
+        //        SelectedGroup = selectedGroup, // Gửi nhóm đang chọn xuống View
+        //        SearchTerm = searchTerm // Gửi từ khóa tìm kiếm xuống View
+        //    };
+
+        //    return View(viewModel);
+        //}
+        public async Task<IActionResult> Index(string? selectedOU, string? searchTerm)
         {
             var adminUsername = User.Identity?.Name;
             if (string.IsNullOrEmpty(adminUsername))
             {
-                return Unauthorized("Cannot determine the current user.");
+                return Challenge(); // Hoặc redirect tới trang login
             }
 
-            var samAccountName = adminUsername.Contains('\\') ? adminUsername.Split('\\')[1] : adminUsername;
+            // GỌI HÀM MỚI: Lấy OUs thay vì Groups
+            // (Đây là hàm chúng ta đã sửa ở Services/ADManagementService.cs)
+            var managedOUs = _adManagementService.GetManagedOUNamesForAdmin(adminUsername);
 
-            _logger.LogInformation("Fetching data for admin: {admin}", samAccountName);
+            // GỌI HÀM MỚI: Truyền selectedOU thay vì selectedGroup
+            // (Đây là hàm chúng ta đã sửa ở Services/ADManagementService.cs)
+            var users = _adManagementService.GetManagedUsersForAdmin(adminUsername, selectedOU, searchTerm);
 
-            var managedGroups = _adManagementService.GetManagedGroupNamesForAdmin(samAccountName);
-
-            // Truyền tham số lọc vào service
-            List<UserPrincipal> managedUsers = _adManagementService.GetManagedUsersForAdmin(samAccountName, selectedGroup, searchTerm);
-
-            var userViewModels = managedUsers.Select(user =>
+            // Map UserPrincipal sang UserViewModel (giữ nguyên)
+            var userViewModels = users.Select(user => new UserViewModel
             {
-                // ... (logic tính ngày hết hạn không thay đổi)
-                DateTime? expirationDate = null;
-                if (user.PasswordNeverExpires == false)
-                {
-                    try
-                    {
-                        var de = user.GetUnderlyingObject() as DirectoryEntry;
-                        if (de != null)
-                        {
-                            var expiryTimeComputed = de.Properties["msDS-UserPasswordExpiryTimeComputed"].Value;
-                            if (expiryTimeComputed != null && expiryTimeComputed is long expiryTicks)
-                            {
-                                if (expiryTicks > 0 && expiryTicks != 9223372036854775807)
-                                {
-                                    expirationDate = DateTime.FromFileTime(expiryTicks);
-                                }
-                            }
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogWarning(ex, "Could not determine password expiration for user {user}", user.SamAccountName);
-                        expirationDate = null;
-                    }
-                }
-
-                return new UserViewModel
-                {
-                    Username = user.SamAccountName,
-                    DisplayName = user.DisplayName,
-                    EmailAddress = user.EmailAddress,
-                    IsPasswordNeverExpires = user.PasswordNeverExpires,
-                    IsPasswordChangeRequired = (user.LastPasswordSet == null),
-                    PasswordExpirationDate = expirationDate
-                };
+                Username = user.SamAccountName,
+                DisplayName = user.DisplayName,
+                EmailAddress = user.EmailAddress,
+                IsPasswordNeverExpires = user.PasswordNeverExpires,
+                IsPasswordChangeRequired = (user.LastPasswordSet == null)
             }).ToList();
 
+            // THÊM MỚI: Hàm helper để tạo tên hiển thị "thân thiện" cho OU
+            Func<string, string> formatOUName = (dn) =>
+            {
+                try
+                {
+                    // Input: "OU=Users,OU=Sales,DC=company,DC=com"
+                    // Output: "Sales, Users"
+                    var parts = dn.Split(',')
+                                  .Where(p => p.StartsWith("OU=", StringComparison.OrdinalIgnoreCase))
+                                  .Select(p => p.Substring(3))
+                                  .Reverse();
+                    return string.Join(", ", parts);
+                }
+                catch { return dn; } // Fallback
+            };
+
+            // THÊM MỚI: Tạo SelectList cho OUs
+            var ouSelectList = managedOUs.Select(ou => new SelectListItem
+            {
+                Value = ou,
+                Text = formatOUName(ou) // Sử dụng tên đã định dạng
+            }).ToList();
+
+
+            // SỬA: Gán dữ liệu vào ViewModel mới
             var viewModel = new UserManagementViewModel
             {
                 Users = userViewModels,
-                ManagedGroups = managedGroups,
-                SelectedGroup = selectedGroup, // Gửi nhóm đang chọn xuống View
-                SearchTerm = searchTerm // Gửi từ khóa tìm kiếm xuống View
+                // GÁN VÀO AvailableOUs (thay vì AvailableGroups)
+                AvailableOUs = new SelectList(ouSelectList, "Value", "Text", selectedOU),
+                // GÁN VÀO SelectedOU (thay vì SelectedGroup)
+                SelectedOU = selectedOU,
+                SearchTerm = searchTerm
             };
 
             return View(viewModel);
@@ -217,247 +280,42 @@ namespace ADPasswordManager.Controllers
             return View(model);
         }
 
-
-        // GET: Management/CreateUser
-        public IActionResult EditUser(string username)
+        [HttpGet]
+        public IActionResult DeleteMultipleConfirmation([FromQuery] List<string> userIds)
         {
-            if (string.IsNullOrEmpty(username))
+            if (userIds == null || !userIds.Any())
             {
-                return BadRequest("Username is required to edit user.");
+                return BadRequest("No users selected.");
             }
-
-            var user = _adManagementService.GetUserByUsername(username);
-            if (user == null)
-            {
-                return NotFound($"User '{username}' not found.");
-            }
-
-            var model = new CreateUserViewModel
-            {
-                Username = user.SamAccountName,
-                EmailAddress = user.EmailAddress,
-                FirstName = user.GivenName,
-                LastName = user.Surname,
-                
-                //SelectedOU = user.DistinguishedName,
-                SetPasswordNeverExpires = user.PasswordNeverExpires,
-                //RequirePasswordChangeOnLogon = user.PasswordNeverExpires,
-                AvailableOUs = _adManagementService.GetAllOUs()
-                    .Select(ou => new SelectListItem
-                    {
-                        Text = ou,
-                        Value = ou,
-                        Selected = ou == user.DistinguishedName // đánh dấu OU hiện tại
-                    }).ToList()
-            };
-
+            var model = new DeleteMultipleViewModel { UserIds = userIds };
             return View(model);
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult EditUser(CreateUserViewModel model)
+        public IActionResult DeleteMultiple(DeleteMultipleViewModel model)
         {
-            if (string.IsNullOrEmpty(model.Username))
+            if (model.UserIds == null || !model.UserIds.Any())
             {
-                ModelState.AddModelError("Username", "The Username field is required.");
+                TempData["ErrorMessage"] = "No users were selected for deletion.";
+                return RedirectToAction("Index");
             }
 
-            if (string.IsNullOrEmpty(model.FirstName))
+            var (Success, Message) = _adManagementService.DeleteUsers(model.UserIds);
+
+            if (Success)
             {
-                ModelState.AddModelError("FirstName", "The FirstName field is required.");
-            }
-
-            if (string.IsNullOrEmpty(model.LastName))
-            {
-                ModelState.AddModelError("LastName", "The LastName field is required.");
-            }
-
-            if (string.IsNullOrEmpty(model.Password))
-            {
-                ModelState.AddModelError("Password", "The Password field is required.");
-            }
-
-            if (string.IsNullOrEmpty(model.EmailAddress))
-            {
-                ModelState.AddModelError("EmailAddress", "The EmailAddress field is required.");
-            }
-            if (string.IsNullOrEmpty(model.SelectedOU))
-            {
-                ModelState.AddModelError("SelectedOU", "The Organizational Unit field is required.");
-            }
-
-            if (ModelState.IsValid)
-            {
-                bool isSuccess = _adManagementService.EditUser(model.Username, model.EmailAddress, model.FirstName, model.LastName,
-                    model.Password, model.SelectedOU, model.RequirePasswordChangeOnLogon, model.SetPasswordNeverExpires);
-
-                if (isSuccess)
-                {
-                    // View sẽ dùng JavaScript để gửi thông điệp về cho trang chính
-                    ViewBag.ResetSuccess = true;
-                    TempData["SuccessMessage"] = $"Edit user '{model.Username}' is successfully.";
-                    return View(model);
-                }
-                else
-                {
-                    ModelState.AddModelError(string.Empty, "An error occurred while add the user. Please check the application logs for details.");
-                }
-                // Nếu ModelState không hợp lệ, phải nạp lại danh sách OU
-                model.AvailableOUs = _adManagementService.GetAllOUs()
-                            .Select(ou => new SelectListItem { Text = ou, Value = ou })
-                            .ToList();
-
-            }
-            return View(model);
-        }
-
-        // GET: Management/Delete/username
-        public async Task<IActionResult> Delete(string username)
-        {
-            if (string.IsNullOrEmpty(username))
-            {
-                return NotFound();
-            }
-
-            // Gọi service để lấy thông tin người dùng từ AD hoặc database
-            var user = _adManagementService.GetUserByUsername(username);
-            if (user == null)
-            {
-                return NotFound($"User '{username}' not found.");
-            }
-
-            // Tạo ViewModel để hiển thị thông tin xác nhận xóa
-            var model = new DeleteUserViewModel
-            {
-                Username = user.SamAccountName,
-                EmailAddress = user.EmailAddress
-            };
-
-            // Trả về view xác nhận xóa
-            return View(model);
-        }
-
-
-        [HttpPost, ActionName("Delete")]
-        [ValidateAntiForgeryToken]
-        public IActionResult DeleteConfirmed(string username)
-        {
-            if (string.IsNullOrEmpty(username))
-            {
-                return NotFound("Username is required.");
-            }
-
-            var user = _adManagementService.GetUserByUsername(username);
-            if (user == null)
-            {
-                ViewBag.DeleteSuccess = false;
-                ViewBag.ErrorMessage = $"User '{username}' not found in Active Directory.";
-                return View("Delete", new DeleteUserViewModel { Username = username });
-            }
-
-            bool deleted = _adManagementService.DeleteUser(username);
-            if (deleted)
-            {
-                TempData["SuccessMessage"] = $"User '{username}' deleted successfully.";
-                ViewBag.DeleteSuccess = true;
+                TempData["SuccessMessage"] = Message;
             }
             else
             {
-                ViewBag.DeleteSuccess = false;
-                ViewBag.ErrorMessage = $"Failed to delete user '{username}'.";
+                TempData["ErrorMessage"] = Message;
             }
 
-            var model = new DeleteUserViewModel
-            {
-                Username = user.SamAccountName,
-                EmailAddress = user.EmailAddress
-            };
-
-            return View("Delete", model);
+            // Gửi thông điệp về iframe cha để đóng modal và tải lại trang
+            return Content("<script>window.parent.postMessage('userSaved', '*');</script>", "text/html");
         }
 
-        // POST: Management/DeleteMultiple
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public IActionResult DeleteMultiple(IEnumerable<string> usernames)
-        {
-            if (usernames == null || !usernames.Any())
-            {
-                TempData["ErrorMessage"] = "Please select at least one user to delete.";
-                return RedirectToAction(nameof(Index));
-            }
-
-            var deletedUsers = new List<DeleteUserViewModel>();
-            var failedUsers = new List<string>();
-
-            foreach (var username in usernames)
-            {
-                var user = _adManagementService.GetUserByUsername(username);
-                if (user == null)
-                {
-                    failedUsers.Add(username);
-                    continue;
-                }
-
-                bool deleted = _adManagementService.DeleteUser(username);
-                if (deleted)
-                {
-                    deletedUsers.Add(new DeleteUserViewModel
-                    {
-                        Username = user.SamAccountName,
-                        EmailAddress = user.EmailAddress
-                    });
-                }
-                else
-                {
-                    failedUsers.Add(username);
-                }
-            }
-
-            ViewBag.DeleteSuccess = deletedUsers.Any();
-            ViewBag.FailedUsers = failedUsers;
-            TempData["SuccessMessage"] = $"{deletedUsers.Count} user(s) deleted successfully.";
-            TempData["ErrorMessage"] = failedUsers.Any()
-                ? $"{failedUsers.Count} user(s) could not be deleted."
-                : null;
-
-            return View("DeleteMultipleConfirmation", deletedUsers);
-        }
-
-
-        /// GET: Management/DeleteMultipleConfirmation
-        public IActionResult DeleteMultipleConfirmation(IEnumerable<string> usernames)
-        {
-            if (usernames == null || !usernames.Any())
-            {
-                return BadRequest("No users selected for deletion.");
-            }
-
-            var usersToDelete = new List<DeleteUserViewModel>();
-
-            foreach (var username in usernames)
-            {
-                var user = _adManagementService.GetUserByUsername(username);
-                if (user != null)
-                {
-                    usersToDelete.Add(new DeleteUserViewModel
-                    {
-                        Username = user.SamAccountName,
-                        EmailAddress = user.EmailAddress
-                    });
-                }
-            }
-
-            if (!usersToDelete.Any())
-            {
-                return NotFound("No valid users found for deletion.");
-            }
-
-            // Truyền danh sách người dùng đến View để xác nhận
-            return View(usersToDelete);
-        }
-
-
+        // code thêm vào trước chỗ này
     }
 }

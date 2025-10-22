@@ -36,6 +36,17 @@
                         </div>
                     </dd>
                 </div>
+                <div>
+                    <dt class="text-sm font-medium text-gray-500">Managed OUs</dt>
+                    <dd class="mt-1 text-sm text-gray-900">
+                        <div class="flex flex-wrap gap-2">
+                            @foreach (var group in Model.ManagedOUs.Split(';', StringSplitOptions.RemoveEmptyEntries))
+                            {
+                                <span class="px-2 py-1 bg-gray-200 text-gray-800 text-xs font-medium rounded-full">@group <br /></span>
+                            }
+                        </div>
+                    </dd>
+                </div>
             </dl>
         </div>
 

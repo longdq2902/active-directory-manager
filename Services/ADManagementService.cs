@@ -32,15 +32,18 @@ namespace ADPasswordManager.Services
             _domainController = configuration.GetValue<string>("ADSettings:DomainController") ?? string.Empty;
         }
 
-        // Thêm 2 tham số mới: selectedGroup và searchTerm
-        public List<UserPrincipal> GetManagedUsersForAdmin(string adminUsername, string selectedGroup = null, string searchTerm = null)
+        // Sửa đổi hoàn toàn hàm này
+        [SupportedOSPlatform("windows")]
+        public List<UserPrincipal> GetManagedUsersForAdmin(string adminUsername, string selectedOU = null, string searchTerm = null)
         {
-            _logger.LogDebug("--- Starting GetManagedUsersForAdmin for user: {user} with filter Group: '{group}', Search: '{search}' ---", adminUsername, selectedGroup, searchTerm);
+            _logger.LogDebug("--- Starting GetManagedUsersForAdmin (by OU) for user: {user} with filter OU: '{ou}', Search: '{search}' ---", adminUsername, selectedOU, searchTerm);
             var managedUsers = new Dictionary<string, UserPrincipal>();
 
-            var allManagedGroups = GetManagedGroupNamesForAdmin(adminUsername);
-            if (!allManagedGroups.Any())
+            // Gọi hàm mới ta vừa sửa
+            var allManagedOUs = GetManagedOUNamesForAdmin(adminUsername);
+            if (!allManagedOUs.Any())
             {
+                _logger.LogWarning("Admin {user} has no managed OUs.", adminUsername);
                 return new List<UserPrincipal>();
             }
 
@@ -52,45 +55,58 @@ namespace ADPasswordManager.Services
 
             try
             {
-                using (var context = new PrincipalContext(ContextType.Domain, _domain, _serviceUser, _servicePassword))
-                {
-                    // Nếu có chọn một nhóm cụ thể, chỉ lấy user từ nhóm đó
-                    var groupsToScan = !string.IsNullOrEmpty(selectedGroup) && allManagedGroups.Contains(selectedGroup)
-                        ? new List<string> { selectedGroup }
-                        : allManagedGroups;
+                // Nếu có chọn một OU cụ thể, chỉ lấy user từ OU đó
+                // Phải kiểm tra xem OU này có nằm trong danh sách admin được phép quản lý không
+                var ousToScan = !string.IsNullOrEmpty(selectedOU) && allManagedOUs.Contains(selectedOU)
+                    ? new List<string> { selectedOU }
+                    : allManagedOUs; // Nếu không chọn gì, quét tất cả OUs được phép
 
-                    foreach (var groupName in groupsToScan)
+                foreach (var ouDN in ousToScan)
+                {
+                    try
                     {
-                        var group = GroupPrincipal.FindByIdentity(context, IdentityType.SamAccountName, groupName);
-                        if (group != null)
+                        // Tạo context riêng cho từng OU
+                        using (var context = new PrincipalContext(ContextType.Domain, _domain, ouDN, _serviceUser, _servicePassword))
+                        using (var userPrincipalFilter = new UserPrincipal(context))
                         {
-                            var members = group.GetMembers(true);
-                            foreach (var member in members)
+                            // Chỉ tìm kiếm trong phạm vi OU này (SearchScope.OneLevel hoặc Subtree tùy bạn)
+                            // Mặc định PrincipalSearcher dùng Subtree, sẽ tìm cả các OU con
+                            using (var searcher = new PrincipalSearcher(userPrincipalFilter))
                             {
-                                if (member is UserPrincipal user)
+                                foreach (var result in searcher.FindAll())
                                 {
-                                    if (!managedUsers.ContainsKey(user.SamAccountName))
+                                    if (result is UserPrincipal user)
                                     {
-                                        managedUsers.Add(user.SamAccountName, user);
+                                        if (!managedUsers.ContainsKey(user.SamAccountName))
+                                        {
+                                            managedUsers.Add(user.SamAccountName, user);
+                                        }
+                                        else
+                                        {
+                                            // Nếu user thuộc nhiều OU được quét, chúng ta chỉ cần giữ lại 1 bản
+                                            // (giải phóng bản trùng lặp)
+                                            user.Dispose();
+                                        }
                                     }
                                 }
                             }
                         }
-                        else
-                        {
-                            _logger.LogWarning("Could not find managed group '{groupName}' in AD.", groupName);
-                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Error searching for users in OU: {OU}", ouDN);
+                        // Bỏ qua nếu có lỗi ở 1 OU và tiếp tục với các OUs khác
                     }
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "An error occurred while getting managed users for '{adminUsername}'.", adminUsername);
+                _logger.LogError(ex, "An error occurred while getting managed users by OU for '{adminUsername}'.", adminUsername);
             }
 
             var finalUserList = managedUsers.Values.AsEnumerable();
 
-            // Áp dụng bộ lọc tìm kiếm nếu có
+            // Áp dụng bộ lọc tìm kiếm (searchTerm) sau khi đã lấy hết danh sách
             if (!string.IsNullOrEmpty(searchTerm))
             {
                 finalUserList = finalUserList.Where(u =>
@@ -99,15 +115,74 @@ namespace ADPasswordManager.Services
                 );
             }
 
-            _logger.LogDebug("--- Finished GetManagedUsersForAdmin. Found {count} unique users. ---", finalUserList.Count());
-            return finalUserList.OrderBy(u => u.SamAccountName).ToList();
+            _logger.LogDebug("--- Finished GetManagedUsersForAdmin (by OU). Found {count} unique users. ---", finalUserList.Count());
+            // Trả về danh sách user, nhưng giải phóng các đối tượng UserPrincipal không nằm trong danh sách cuối cùng
+            // (do searchTerm)
+            var finalPrincipals = finalUserList.OrderBy(u => u.SamAccountName).ToList();
+
+            // Giải phóng tài nguyên cho các user bị lọc ra
+            foreach (var user in managedUsers.Values.Except(finalPrincipals))
+            {
+                user.Dispose();
+            }
+
+            return finalPrincipals;
         }
 
 
-        public List<string> GetManagedGroupNamesForAdmin(string adminUsername)
+        //public List<string> GetManagedGroupNamesForAdmin(string adminUsername)
+        //{
+        //    _logger.LogDebug("--- Starting GetManagedGroupNamesForAdmin for user: {user} ---", adminUsername);
+        //    var groupsToManage = new HashSet<string>();
+        //    var allRules = _context.DelegationRules.ToList();
+
+        //    if (string.IsNullOrEmpty(_domain) || !allRules.Any())
+        //    {
+        //        _logger.LogWarning("AD domain is not configured or no delegation rules found in the database.");
+        //        return new List<string>();
+        //    }
+
+        //    try
+        //    {
+        //        using (var context = new PrincipalContext(ContextType.Domain, _domain, _serviceUser, _servicePassword))
+        //        {
+        //            var adminUser = UserPrincipal.FindByIdentity(context, IdentityType.SamAccountName, adminUsername);
+        //            if (adminUser == null)
+        //            {
+        //                _logger.LogWarning("Could not find admin user '{adminUsername}' in AD.", adminUsername);
+        //                return new List<string>();
+        //            }
+
+        //            var adminMemberOfGroups = adminUser.GetAuthorizationGroups();
+        //            var adminGroupNames = new HashSet<string>(adminMemberOfGroups.Select(g => g.SamAccountName));
+
+        //            foreach (var rule in allRules)
+        //            {
+        //                if (adminGroupNames.Contains(rule.AdminGroup))
+        //                {
+        //                    var managedGroupsFromRule = rule.ManagedGroups.Split(',', StringSplitOptions.RemoveEmptyEntries);
+        //                    foreach (var managedGroup in managedGroupsFromRule)
+        //                    {
+        //                        groupsToManage.Add(managedGroup.Trim());
+        //                    }
+        //                }
+        //            }
+        //        }
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        _logger.LogError(ex, "An error occurred while getting managed groups for '{adminUsername}'.", adminUsername);
+        //    }
+
+        //    _logger.LogDebug("--- Finished GetManagedGroupNamesForAdmin. Found {count} unique groups. ---", groupsToManage.Count);
+        //    return groupsToManage.OrderBy(g => g).ToList();
+        //}
+        public List<string> GetManagedOUNamesForAdmin(string adminUsername)
         {
-            _logger.LogDebug("--- Starting GetManagedGroupNamesForAdmin for user: {user} ---", adminUsername);
-            var groupsToManage = new HashSet<string>();
+            _logger.LogDebug("--- Starting GetManagedOUNamesForAdmin for user: {user} ---", adminUsername);
+
+            // Đổi tên biến này
+            var ousToManage = new HashSet<string>();
             var allRules = _context.DelegationRules.ToList();
 
             if (string.IsNullOrEmpty(_domain) || !allRules.Any())
@@ -134,10 +209,13 @@ namespace ADPasswordManager.Services
                     {
                         if (adminGroupNames.Contains(rule.AdminGroup))
                         {
-                            var managedGroupsFromRule = rule.ManagedGroups.Split(',', StringSplitOptions.RemoveEmptyEntries);
-                            foreach (var managedGroup in managedGroupsFromRule)
+                            // THAY ĐỔI LOGIC ĐỌC:
+                            // 1. Đọc từ rule.ManagedOUs (thay vì ManagedGroups)
+                            // 2. Split bằng dấu chấm phẩy ';' (thay vì ',')
+                            var managedOUsFromRule = rule.ManagedOUs.Split(';', StringSplitOptions.RemoveEmptyEntries);
+                            foreach (var managedOU in managedOUsFromRule)
                             {
-                                groupsToManage.Add(managedGroup.Trim());
+                                ousToManage.Add(managedOU.Trim());
                             }
                         }
                     }
@@ -145,11 +223,11 @@ namespace ADPasswordManager.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "An error occurred while getting managed groups for '{adminUsername}'.", adminUsername);
+                _logger.LogError(ex, "An error occurred while getting managed OUs for '{adminUsername}'.", adminUsername);
             }
 
-            _logger.LogDebug("--- Finished GetManagedGroupNamesForAdmin. Found {count} unique groups. ---", groupsToManage.Count);
-            return groupsToManage.OrderBy(g => g).ToList();
+            _logger.LogDebug("--- Finished GetManagedOUNamesForAdmin. Found {count} unique OUs. ---", ousToManage.Count);
+            return ousToManage.OrderBy(g => g).ToList();
         }
 
         public UserViewModel? GetUserStatus(string username)
@@ -359,124 +437,50 @@ namespace ADPasswordManager.Services
             }
         }
 
-        public bool EditUser(string username, string email, string firstName, string lastName, string password, string selectedOU, bool requireChange, bool neverExpires) // Thêm tham số selectedOU
+        [SupportedOSPlatform("windows")]
+        public (bool Success, string Message) DeleteUsers(List<string> usernames)
         {
-            _logger.LogInformation("Attempting to edit user '{username}' in OU: {ou}", username, selectedOU);
-            try
-            {
-                // DÙNG selectedOU thay vì _serviceOU
-                using (var pContext = new PrincipalContext(ContextType.Domain, _domain, selectedOU, _serviceUser, _servicePassword))
-                {
-                    var userPrincipal = UserPrincipal.FindByIdentity(pContext, IdentityType.SamAccountName, username);
-                    if (userPrincipal == null)
-                    {
-                        _logger.LogWarning("User '{username}' not found in this OU. Edit user failed.", username);
-                        return false;
-                    }
-
-                    // Cập nhật thông tin người dùng
-                    userPrincipal.EmailAddress = email;
-                    userPrincipal.DisplayName = $"{firstName} {lastName}";
-                    userPrincipal.GivenName = firstName;
-                    userPrincipal.Surname = lastName;
-                    userPrincipal.PasswordNeverExpires = neverExpires;
-
-                    if (!string.IsNullOrEmpty(password))
-                    {
-                        userPrincipal.SetPassword(password);
-                    }
-
-                    if (requireChange)
-                    {
-                        userPrincipal.ExpirePasswordNow();
-                    }
-
-                    userPrincipal.Save();
-
-                    _logger.LogInformation("Successfully edited user '{username}' in OU '{ou}'", username, selectedOU);
-                    return true;
-                }
-            }
-            catch (Exception ex)
-            {
-                // Sửa lại thông báo log cho đúng ngữ cảnh
-                _logger.LogError(ex, "An error occurred while editing user '{username}'", username);
-                return false;
-            }
-        }
-
-
-        public UserPrincipal GetUserByUsername(string username)
-        {
-            _logger.LogInformation("Fetching user by username: {username}", username);
-
-            if (string.IsNullOrEmpty(_domain) || string.IsNullOrEmpty(_serviceUser) || string.IsNullOrEmpty(_servicePassword))
-            {
-                _logger.LogError("AD settings (Domain, ServiceUser, ServicePassword) are not fully configured.");
-                return null;
-            }
+            _logger.LogWarning("Attempting to delete {Count} users: {Usernames}", usernames.Count, string.Join(", ", usernames));
+            int successCount = 0;
+            int failCount = 0;
 
             try
             {
                 using (var context = new PrincipalContext(ContextType.Domain, _domain, _serviceUser, _servicePassword))
                 {
-                    var user = UserPrincipal.FindByIdentity(context, IdentityType.SamAccountName, username);
-                    if (user != null)
+                    foreach (var username in usernames)
                     {
-                        _logger.LogInformation("User '{username}' found in AD.", username);
-                        return user;
-                    }
-                    else
-                    {
-                        _logger.LogWarning("User '{username}' not found in AD.", username);
-                        return null;
+                        try
+                        {
+                            var user = UserPrincipal.FindByIdentity(context, IdentityType.SamAccountName, username);
+                            if (user != null)
+                            {
+                                user.Delete();
+                                _logger.LogInformation("Successfully deleted user '{Username}'", username);
+                                successCount++;
+                            }
+                            else
+                            {
+                                _logger.LogWarning("Could not find user '{Username}' to delete.", username);
+                                failCount++;
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogError(ex, "Failed to delete user '{Username}'", username);
+                            failCount++;
+                        }
                     }
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error occurred while fetching user '{username}'", username);
-                return null;
+                _logger.LogError(ex, "An error occurred in DeleteUsers method.");
+                return (false, $"An error occurred: {ex.Message}");
             }
+
+            return (true, $"Successfully deleted {successCount} users. Failed to delete {failCount} users.");
         }
-
-        
-        public bool DeleteUser(string username)
-        {
-            _logger.LogInformation("Attempting to delete user '{username}' from Active Directory.", username);
-
-            if (string.IsNullOrEmpty(_domain) || string.IsNullOrEmpty(_serviceUser) || string.IsNullOrEmpty(_servicePassword))
-            {
-                _logger.LogError("AD settings (Domain, ServiceUser, ServicePassword) are not fully configured.");
-                return false;
-            }
-
-            try
-            {
-                using (var context = new PrincipalContext(ContextType.Domain, _domain, _serviceUser, _servicePassword))
-                {
-                    var user = UserPrincipal.FindByIdentity(context, IdentityType.SamAccountName, username);
-                    if (user == null)
-                    {
-                        _logger.LogWarning("User '{username}' not found in AD. Delete aborted.", username);
-                        return false;
-                    }
-
-                    user.Delete();
-                    _logger.LogInformation("Successfully deleted user '{username}' from AD.", username);
-                    return true;
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "An error occurred while deleting user '{username}'", username);
-                return false;
-            }
-        }
-
-
-
-
 
 
 
