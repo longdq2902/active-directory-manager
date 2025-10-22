@@ -56,7 +56,7 @@
                         </svg>
                     </div>
                     <h3 id="create-user-title" class="text-lg sm:text-xl font-semibold text-gray-900">
-                        Create New User
+                        New User
                     </h3>
                 </div>
                 <button id="close-modal-create-btn" type="button"
@@ -114,11 +114,11 @@
 </div>
 
 
-<div class="max-w-7xl mx-auto">
-    <div class="flex flex-col md:flex-row -mx-4">
+<div class="max-w-7xl mx-auto h-full">
+    <div class="flex flex-col md:flex-row -mx-4 h-full">
 
-        <div class="w-full md:w-1/4 px-4 mb-4 md:mb-0">
-            <div class="bg-white shadow-md rounded-lg p-4">
+        <div class="w-full md:w-1/4 px-4 flex flex-col">
+            <div class="bg-white shadow-md rounded-lg p-4 flex-1 overflow-y-auto">
                 <h2 class="text-lg font-semibold mb-4 text-gray-800 border-b pb-2">Managed OUs</h2> <ul id="ou-list">
                     <li class="mb-2">
                         <a asp-action="Index"
@@ -140,7 +140,7 @@
                 </ul>
             </div>
         </div>
-        <div class="w-full md:w-3/4 px-4">
+        <div class="w-full md:w-3/4 px-4 flex flex-col h-full">
 
             <div class="flex justify-between items-center mb-6">
                 <h1 class="text-3xl font-bold text-gray-800">@ViewData["Title"]</h1>
@@ -151,15 +151,15 @@
                     </button>
                     <button id="add-user-btn"
                             class="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700">
-                        Add New User
+                        Create User
                     </button>
                 </div>
             </div>
 
             <div class="mb-4">
                 <form id="search-form" asp-action="Index" method="get" class="bg-white shadow-md rounded-lg p-4 flex items-center">
-                    <input type="hidden" name="selectedOU" value="@Model.SelectedOU" /> <input type="search" name="searchTerm" value="@Model.SearchTerm" placeholder="Search by username or display name..."
-                                                                                               class="form-input block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50" />
+                    <input type="hidden" name="selectedOU" value="@Model.SelectedOU" /> <input  name="searchTerm" value="@Model.SearchTerm" placeholder="  Search by username or display name..."
+                                                                                               class="w-full bg-transparent placeholder:text-slate-400 text-slate-700 text-sm border border-slate-200 rounded-md pl-3 pr-28 py-2 transition duration-300 ease focus:outline-none focus:border-slate-400 hover:border-slate-300 shadow-sm focus:shadow" />
                     <button type="submit" class="ml-4 px-4 py-2 bg-indigo-600 text-white font-semibold rounded-md hover:bg-indigo-700">
                         Search
                     </button>
@@ -183,10 +183,10 @@
                 </div>
             }
 
-            <div class="bg-white shadow-md rounded-lg overflow-x-auto">
+            <div class="bg-white shadow-md rounded-lg overflow-x-auto flex-1 overflow-y-auto">
                 <table class="min-w-full leading-normal">
                     <thead>
-                        <tr class="border-b-2 border-gray-200 bg-gray-50 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                        <tr class="sticky top-0 border-b-2 border-gray-200 bg-gray-50 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                             <th class="px-5 py-3">
                                 <input type="checkbox" id="select-all-checkbox" class="form-checkbox h-4 w-4 text-indigo-600 transition duration-150 ease-in-out" />
                             </th>

@@ -80,17 +80,17 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - AD Password Manager</title>
+    <title>@ViewData["Title"] - AD Manager</title>
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
 </head>
-<body class="bg-gray-100">
+<body class="flex flex-col h-screen bg-gray-100">
     <header>
-        <nav class="bg-white shadow-sm">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <nav class="sticky bg-white shadow-sm">
+            <div class="px-4 sm:px-6 lg:px-8">
                 <div class="flex items-center justify-between h-16">
                     <div class="flex items-center">
                         <a asp-controller="Management" asp-action="Index" class="text-xl font-bold text-gray-800 hover:text-indigo-600">
-                            AD Password Manager
+                            AD Manager
                         </a>
                         @if (SignInManager.IsSignedIn(User))
                         {
@@ -144,7 +144,7 @@
         </nav>
     </header>
 
-    <main role="main" class="py-6">
+    <main role="main" class="flex-1 overflow-hidden py-6">
         @RenderBody()
     </main>
 
