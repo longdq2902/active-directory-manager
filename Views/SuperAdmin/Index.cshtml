@@ -13,34 +13,45 @@
             </button>
         </div>
         <div class="mt-4">
-            <iframe id="rule-iframe" src="about:blank" class="w-full h-96"  frameborder="1"></iframe>
-        </div>
+            <iframe id="rule-iframe" src="about:blank" class="w-full" frameborder="0" style="height: 40rem;"></iframe> </div>
     </div>
 </div>
 
+<div class="flex flex-col h-full">
 
-<div class="max-w-7xl mx-auto">
-    <div class="flex justify-between items-center mb-6">
+    <div class="flex justify-between items-center mb-6 flex-shrink-0">
         <h1 class="text-3xl font-bold text-gray-800">@ViewData["Title"]</h1>
         <div>
             <button id="delete-selected-btn"
                     class="hidden inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700">
                 Delete Selected
             </button>
-            <button id="add-rule-btn"
-                    class="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700">
+            <a href="@Url.Action("Create")" id="add-rule-btn"
+               class="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700">
                 Add New Rule
-            </button>
+            </a>
         </div>
     </div>
 
-    <form id="rules-form" asp-action="DeleteMultiple" method="post">
-        <div class="bg-white shadow-md rounded-lg overflow-x-auto">
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4 flex-shrink-0" role="alert">
+            <span class="block sm:inline">@TempData["SuccessMessage"]</span>
+        </div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+         <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4 flex-shrink-0" role="alert">
+            <span class="block sm:inline">@TempData["ErrorMessage"]</span>
+        </div>
+    }
+
+    <form id="rules-form" asp-action="DeleteMultiple" method="post" class="flex-1 flex flex-col min-h-0"> <div class="bg-white shadow-md rounded-lg overflow-x-auto flex-1 overflow-y-auto">
             <table class="min-w-full leading-normal">
                 <thead>
-                    <tr class="border-b-2 border-gray-200 bg-gray-50 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                        <th class="px-5 py-3 w-12">
-                            <input type="checkbox" id="select-all-checkbox" class="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500">
+                    <tr class="sticky top-0 border-b-2 border-gray-200 bg-gray-50 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                        <th class="px-5 py-3">
+                            <input type="checkbox" id="select-all-checkbox" class="form-checkbox h-4 w-4 text-indigo-600 transition duration-150 ease-in-out" />
                         </th>
                         <th class="px-5 py-3">Admin Group</th>
                         <th class="px-5 py-3">Managed Groups</th>
@@ -52,38 +63,31 @@
                     @foreach (var rule in Model)
                     {
                         <tr class="border-b border-gray-200 hover:bg-gray-100">
-                            <td class="px-5 py-4">
-                                <input type="checkbox" name="ruleIds" value="@rule.Id" class="rule-checkbox h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500">
-                            </td>
                             <td class="px-5 py-4 text-sm">
-                                <p class="text-gray-900 font-semibold whitespace-no-wrap">@rule.AdminGroup</p>
+                                <input type="checkbox" class="rule-checkbox form-checkbox h-4 w-4 text-indigo-600 transition duration-150 ease-in-out" name="ruleIds" value="@rule.Id" />
                             </td>
+                            <td class="px-5 py-4 text-sm"><p class="text-gray-900 whitespace-no-wrap">@rule.AdminGroup</p></td>
                             <td class="px-5 py-4 text-sm">
                                 <div class="flex flex-wrap gap-2">
-                                    @foreach (var group in rule.ManagedGroups.Split(',', StringSplitOptions.RemoveEmptyEntries))
+                                    @foreach (var group in rule.ManagedGroups.Split(';', StringSplitOptions.RemoveEmptyEntries))
                                     {
-                                        <span class="px-2 py-1 bg-gray-200 text-gray-800 text-xs font-medium rounded-full">@group</span>
+                                        <div class="px-2 py-1 bg-gray-200 text-gray-800 text-xs font-medium rounded-full whitespace-nowrap">@group</div>
                                     }
                                 </div>
                             </td>
-                            <td class="px-5 py-4 text-sm ">
-                                <div class="flex flex-wrap gap-2">
+                            <td class="px-5 py-4 text-sm align-top">
+                                <div>
                                     @foreach (var group in rule.ManagedOUs.Split(';', StringSplitOptions.RemoveEmptyEntries))
                                     {
-                                        @* <div class="px-2 py-1 bg-gray-200 text-gray-800 text-xs font-medium rounded-full whitespace-nowrap">@group</div> *@
-                                        @* <div class="px-2 py-1 bg-gray-200 text-gray-800 text-xs font-medium rounded-full whitespace-nowrap"><text>@group.Trim()</text><br /></div> *@
                                         <div class="px-2 py-1 bg-gray-200 text-gray-800 text-xs font-medium rounded-full mb-1">
                                             @group.Trim()
                                         </div>
                                     }
-                                   
                                 </div>
                             </td>
-                            <td class="px-5 py-4 text-sm">
-                                <a asp-action="Edit" asp-route-id="@rule.Id"
-                                   class="edit-rule-btn text-indigo-600 hover:text-indigo-900 mr-4 font-semibold">Edit</a>
-                                <a asp-action="Delete" asp-route-id="@rule.Id"
-                                   class="delete-rule-btn text-red-600 hover:text-red-900 font-semibold">Delete</a>
+                            <td class="px-5 py-4 text-sm whitespace-nowrap">
+                                <a href="@Url.Action("Edit", new { id = rule.Id })" class="edit-rule-btn text-indigo-600 hover:text-indigo-900 mr-4">Edit</a>
+                                <a href="@Url.Action("Delete", new { id = rule.Id })" class="delete-rule-btn text-red-600 hover:text-red-900">Delete</a>
                             </td>
                         </tr>
                     }
@@ -91,77 +95,134 @@
             </table>
         </div>
     </form>
-</div>
-
+</div> 
 @section Scripts {
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            // ... (Script cho modal Add/Edit/Delete đơn lẻ không đổi) ...
-            const ruleModal = document.getElementById('rule-modal');
+            const modal = document.getElementById('rule-modal');
             const iframe = document.getElementById('rule-iframe');
-            const closeRuleModalBtn = document.getElementById('close-modal-btn');
+            const closeModalBtn = document.getElementById('close-modal-btn');
             const addRuleBtn = document.getElementById('add-rule-btn');
             const modalTitle = document.getElementById('modal-title');
 
             const openRuleModal = (url, title, height = '40rem') => {
                 modalTitle.textContent = title;
-                iframe.style.height = height;
+                iframe.style.height = height; // Set iframe height
                 iframe.src = url;
-                ruleModal.classList.remove('hidden');
-            };
-            const closeRuleModal = () => {
-                ruleModal.classList.add('hidden');
-                iframe.src = 'about:blank';
+                modal.classList.remove('hidden');
             };
 
-            addRuleBtn.addEventListener('click', () => { openRuleModal('@Url.Action("Create")', 'Add New Rule'); });
+            const closeRuleModal = () => {
+                modal.classList.add('hidden');
+                iframe.src = 'about:blank'; // Clear iframe src
+            };
+
+            // Event listener cho nút Add New Rule
+            addRuleBtn.addEventListener('click', (e) => {
+                e.preventDefault(); // Ngăn chặn hành động mặc định của thẻ <a>
+                openRuleModal(e.currentTarget.href, 'Add New Rule');
+            });
+
+            // Event listener cho các nút Edit
             document.querySelectorAll('.edit-rule-btn').forEach(btn => {
-                btn.addEventListener('click', (e) => { e.preventDefault(); openRuleModal(e.currentTarget.href, 'Edit Rule'); });
+                btn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    openRuleModal(e.currentTarget.href, 'Edit Rule');
+                });
             });
+
+            // Event listener cho các nút Delete
             document.querySelectorAll('.delete-rule-btn').forEach(btn => {
-                btn.addEventListener('click', (e) => { e.preventDefault(); openRuleModal(e.currentTarget.href, 'Confirm Deletion', '20rem'); });
+                btn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    openRuleModal(e.currentTarget.href, 'Confirm Deletion', '20rem'); // Chiều cao nhỏ hơn cho modal confirm
+                });
             });
-            closeRuleModalBtn.addEventListener('click', closeRuleModal);
-            ruleModal.addEventListener('click', (e) => { if (e.target === ruleModal) closeRuleModal(); });
-            window.addEventListener('message', function(event) {
-                if (event.data === 'ruleSaved') { closeRuleModal(); window.location.reload(); }
-                if (event.data === 'closeRuleModal') { closeRuleModal(); }
+
+
+            // Event listener cho nút đóng modal
+            closeModalBtn.addEventListener('click', closeRuleModal);
+
+            // Đóng modal khi click ra ngoài
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    closeRuleModal();
+                }
+            });
+
+            // Lắng nghe message từ iframe để đóng modal và reload trang
+            window.addEventListener('message', function (event) {
+                if (event.data === 'ruleSaved') {
+                    closeRuleModal();
+                    window.location.reload(); // Reload trang chính
+                }
+                 if (event.data === 'closeModal') { // Cho phép iframe yêu cầu đóng
+                    closeRuleModal();
+                }
             }, false);
 
-            // --- SCRIPT CẬP NHẬT CHO XÓA HÀNG LOẠT ---
+             // --- Script cho xóa hàng loạt ---
             const selectAllCheckbox = document.getElementById('select-all-checkbox');
             const ruleCheckboxes = document.querySelectorAll('.rule-checkbox');
             const deleteSelectedBtn = document.getElementById('delete-selected-btn');
 
             function toggleDeleteButton() {
+                 if(!deleteSelectedBtn) return; // Kiểm tra nút có tồn tại không
                 const anyChecked = Array.from(ruleCheckboxes).some(cb => cb.checked);
                 deleteSelectedBtn.classList.toggle('hidden', !anyChecked);
             }
 
-            selectAllCheckbox.addEventListener('change', function() {
-                ruleCheckboxes.forEach(checkbox => { checkbox.checked = this.checked; });
-                toggleDeleteButton();
-            });
+            if(selectAllCheckbox){
+                selectAllCheckbox.addEventListener('change', function() {
+                    ruleCheckboxes.forEach(checkbox => { checkbox.checked = this.checked; });
+                    toggleDeleteButton();
+                });
+            }
+
 
             ruleCheckboxes.forEach(checkbox => {
                 checkbox.addEventListener('change', function() {
-                    if (!this.checked) { selectAllCheckbox.checked = false; }
-                    else { selectAllCheckbox.checked = Array.from(ruleCheckboxes).every(cb => cb.checked); }
+                    if (!this.checked) {
+                         if(selectAllCheckbox) selectAllCheckbox.checked = false;
+                     }
+                    else {
+                        if(selectAllCheckbox) selectAllCheckbox.checked = Array.from(ruleCheckboxes).every(cb => cb.checked);
+                     }
                     toggleDeleteButton();
                 });
             });
 
-            deleteSelectedBtn.addEventListener('click', function(e) {
-                e.preventDefault();
-                const checkedIds = Array.from(ruleCheckboxes)
-                                      .filter(cb => cb.checked)
-                                      .map(cb => cb.value);
+            if(deleteSelectedBtn){
+                deleteSelectedBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const checkedIds = Array.from(ruleCheckboxes)
+                                          .filter(cb => cb.checked)
+                                          .map(cb => cb.value);
 
-                if (checkedIds.length > 0) {
-                    let url = '@Url.Action("DeleteMultipleConfirmation")' + '?' + checkedIds.map(id => 'ruleIds=' + id).join('&');
-                    openRuleModal(url, 'Confirm Multiple Deletion', '30rem');
-                }
-            });
+                    if (checkedIds.length > 0) {
+                        let url = '@Url.Action("DeleteMultipleConfirmation")' + '?' + checkedIds.map(id => 'ruleIds=' + id).join('&');
+                        openRuleModal(url, 'Confirm Multiple Deletion', '30rem'); // Mở modal xác nhận
+                    }
+                });
+            }
+
+
+            // --- Tự động ẩn thông báo TempData ---
+        const successAlert = document.querySelector('.bg-green-100[role="alert"]'); // Tìm thông báo thành công
+        const errorAlert = document.querySelector('.bg-red-100[role="alert"]'); // Tìm thông báo lỗi (nếu có)
+
+        if (successAlert) {
+            setTimeout(() => {
+                successAlert.style.display = 'none'; // Ẩn đi sau 2 giây
+            }, 2000); // 2000 milliseconds = 2 seconds
+        }
+
+        if (errorAlert) {
+            setTimeout(() => {
+                errorAlert.style.display = 'none'; // Ẩn đi sau 2 giây
+            }, 2000);
+        }
+        // --- Kết thúc tự động ẩn ---
         });
     </script>
 }

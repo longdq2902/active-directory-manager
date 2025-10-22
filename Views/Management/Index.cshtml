@@ -9,7 +9,7 @@
     <div class="absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity"></div>
     <div class="relative h-full w-full flex items-center justify-center p-4">
         <div data-panel
-             class="w-full max-w-2xl  border border-gray-200   bg-gray-200 rounded-2xl shadow-2xl ring-1 ring-black/5 overflow-hidden transform transition duration-150 ease-out opacity-0 scale-95">
+             class="w-full max-w-2xl  border border-gray-200   bg-gray-200 rounded-2xl shadow-2xl ring-1 ring-black/5 overflow-hidden transform transition duration-150 ease-out ">
             <div class="flex items-center justify-between px-5 py-4 border-b">
                 <div class="flex items-center gap-3">
                     <div class="h-9 w-9 inline-flex items-center justify-center rounded-xl bg-indigo-50">
@@ -46,7 +46,7 @@
     <div class="absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity"></div>
     <div class="relative h-full w-full flex items-center justify-center p-4">
         <div data-panel
-             class="w-full max-w-7xl  border border-gray-200   bg-gray-200 rounded-2xl shadow-2xl ring-1 ring-black/5 overflow-hidden transform transition duration-150 ease-out opacity-0 scale-95">
+             class="w-full max-w-7xl  border border-gray-200   bg-gray-200 rounded-2xl shadow-2xl ring-1 ring-black/5 overflow-hidden transform transition duration-150 ease-out">
             <div class="flex items-center justify-between px-5 py-4 border-b">
                 <div class="flex items-center gap-3">
                     <div class="h-9 w-9 inline-flex items-center justify-center rounded-xl bg-indigo-50">
@@ -83,7 +83,7 @@
     <div class="absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity"></div>
     <div class="relative h-full w-full flex items-center justify-center p-4">
         <div data-panel
-             class="w-full max-w-xl  border border-gray-200   bg-gray-200 rounded-2xl shadow-2xl ring-1 ring-black/5 overflow-hidden transform transition duration-150 ease-out opacity-0 scale-95">
+             class="w-full max-w-xl  border border-gray-200   bg-gray-200 rounded-2xl shadow-2xl ring-1 ring-black/5 overflow-hidden transform transition duration-150 ease-out ">
             <div class="flex items-center justify-between px-5 py-4 border-b">
                 <div class="flex items-center gap-3">
                     <div class="h-9 w-9 inline-flex items-center justify-center rounded-xl bg-red-50">
@@ -114,10 +114,10 @@
 </div>
 
 
-<div class="max-w-7xl mx-auto h-full">
-    <div class="flex flex-col md:flex-row -mx-4 h-full">
+<div class="h-full">
+    <div class="flex flex-col md:flex-row h-full gap-4">
 
-        <div class="w-full md:w-1/4 px-4 flex flex-col">
+        <div class="w-full md:w-1/4 flex flex-col">
             <div class="bg-white shadow-md rounded-lg p-4 flex-1 overflow-y-auto">
                 <h2 class="text-lg font-semibold mb-4 text-gray-800 border-b pb-2">Managed OUs</h2> <ul id="ou-list">
                     <li class="mb-2">
@@ -140,7 +140,7 @@
                 </ul>
             </div>
         </div>
-        <div class="w-full md:w-3/4 px-4 flex flex-col h-full">
+        <div class="w-full md:w-3/4 flex flex-col h-full">
 
             <div class="flex justify-between items-center mb-6">
                 <h1 class="text-3xl font-bold text-gray-800">@ViewData["Title"]</h1>
@@ -400,6 +400,23 @@
                     }
                 });
             }
+
+            // --- Tự động ẩn thông báo TempData ---
+            const successAlert = document.querySelector('.bg-green-100[role="alert"]'); // Tìm thông báo thành công [cite: 157]
+            const errorAlert = document.querySelector('.bg-red-100[role="alert"]'); // Tìm thông báo lỗi (nếu có)
+
+            if (successAlert) {
+                setTimeout(() => {
+                    successAlert.style.display = 'none'; // Ẩn đi sau 2 giây
+                }, 2000); // 2000 milliseconds = 2 seconds
+            }
+
+            if (errorAlert) {
+                setTimeout(() => {
+                    errorAlert.style.display = 'none'; // Ẩn đi sau 2 giây
+                }, 2000);
+            }
+            // --- Kết thúc tự động ẩn ---
         });
     </script>
 }
