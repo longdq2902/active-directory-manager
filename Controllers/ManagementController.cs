@@ -16,81 +16,16 @@ namespace ADPasswordManager.Controllers
     {
         private readonly ILogger<ManagementController> _logger;
         private readonly ADManagementService _adManagementService;
+        private readonly IPasswordResetService _passwordResetService;
 
-        public ManagementController(ILogger<ManagementController> logger, ADManagementService adManagementService)
+        public ManagementController(ILogger<ManagementController> logger, ADManagementService adManagementService, IPasswordResetService passwordResetService)
         {
             _logger = logger;
             _adManagementService = adManagementService;
+            _passwordResetService = passwordResetService;
         }
 
-        // Thêm 2 tham số để nhận giá trị từ URL
-        //public IActionResult Index(string selectedGroup, string searchTerm)
-        //{
-        //    var adminUsername = User.Identity?.Name;
-        //    if (string.IsNullOrEmpty(adminUsername))
-        //    {
-        //        return Unauthorized("Cannot determine the current user.");
-        //    }
-
-        //    var samAccountName = adminUsername.Contains('\\') ? adminUsername.Split('\\')[1] : adminUsername;
-
-        //    _logger.LogInformation("Fetching data for admin: {admin}", samAccountName);
-
-        //    var managedGroups = _adManagementService.GetManagedGroupNamesForAdmin(samAccountName);
-
-        //    // Truyền tham số lọc vào service
-        //    List<UserPrincipal> managedUsers = _adManagementService.GetManagedUsersForAdmin(samAccountName, selectedGroup, searchTerm);
-
-        //    var userViewModels = managedUsers.Select(user =>
-        //    {
-        //        // ... (logic tính ngày hết hạn không thay đổi)
-        //        DateTime? expirationDate = null;
-        //        if (user.PasswordNeverExpires == false)
-        //        {
-        //            try
-        //            {
-        //                var de = user.GetUnderlyingObject() as DirectoryEntry;
-        //                if (de != null)
-        //                {
-        //                    var expiryTimeComputed = de.Properties["msDS-UserPasswordExpiryTimeComputed"].Value;
-        //                    if (expiryTimeComputed != null && expiryTimeComputed is long expiryTicks)
-        //                    {
-        //                        if (expiryTicks > 0 && expiryTicks != 9223372036854775807)
-        //                        {
-        //                            expirationDate = DateTime.FromFileTime(expiryTicks);
-        //                        }
-        //                    }
-        //                }
-        //            }
-        //            catch (Exception ex)
-        //            {
-        //                _logger.LogWarning(ex, "Could not determine password expiration for user {user}", user.SamAccountName);
-        //                expirationDate = null;
-        //            }
-        //        }
-
-        //        return new UserViewModel
-        //        {
-        //            Username = user.SamAccountName,
-        //            DisplayName = user.DisplayName,
-        //            EmailAddress = user.EmailAddress,
-        //            IsPasswordNeverExpires = user.PasswordNeverExpires,
-        //            IsPasswordChangeRequired = (user.LastPasswordSet == null),
-        //            PasswordExpirationDate = expirationDate
-        //        };
-        //    }).ToList();
-
-        //    var viewModel = new UserManagementViewModel
-        //    {
-        //        Users = userViewModels,
-        //        ManagedGroups = managedGroups,
-        //        SelectedGroup = selectedGroup, // Gửi nhóm đang chọn xuống View
-        //        SearchTerm = searchTerm // Gửi từ khóa tìm kiếm xuống View
-        //    };
-
-        //    return View(viewModel);
-        //}
-        public async Task<IActionResult> Index(string? selectedOU, string? searchTerm)
+    public async Task<IActionResult> Index(string? selectedOU, string? searchTerm)
         {
             var adminUsername = User.Identity?.Name;
             if (string.IsNullOrEmpty(adminUsername))
@@ -314,6 +249,39 @@ namespace ADPasswordManager.Controllers
 
             // Gửi thông điệp về iframe cha để đóng modal và tải lại trang
             return Content("<script>window.parent.postMessage('userSaved', '*');</script>", "text/html");
+        }
+
+
+        [HttpPost]
+        [ValidateAntiForgeryToken] // Đảm bảo an toàn
+        public async Task<IActionResult> SendResetLink(string username, string userEmail)
+        {
+            if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(userEmail))
+            {
+                return Json(new { success = false, message = "Username or Email is missing." });
+            }
+
+            try
+            {
+                // Gọi service chúng ta đã tạo ở Giai đoạn 2
+                bool success = await _passwordResetService.GenerateAndSendResetLinkAsync(username, userEmail);
+
+                if (success)
+                {
+                    _logger.LogInformation($"Admin successfully sent reset link to user '{username}'.");
+                    return Json(new { success = true, message = $"Successfully sent reset link to {userEmail}." });
+                }
+                else
+                {
+                    return Json(new { success = false, message = "Failed to send email. Check system logs." });
+                }
+            }
+            catch (Exception ex)
+            {
+                // Bắt lỗi nếu người dùng không có email (Exception chúng ta đã ném ra từ PasswordResetService)
+                _logger.LogError(ex, $"Failed to send reset link for '{username}'.");
+                return Json(new { success = false, message = "An error occurred: " + ex.Message });
+            }
         }
 
         // code thêm vào trước chỗ này

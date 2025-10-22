@@ -1,0 +1,61 @@
+﻿@model ADPasswordManager.Models.ViewModels.PublicResetViewModel
+@{
+    ViewData["Title"] = "Reset Password";
+    Layout = "~/Views/Shared/_PublicLayout.cshtml";
+}
+
+<h3 class="text-2xl font-bold text-center mb-2 text-slate-800">Reset Your Password</h3>
+<p class="text-center text-sm text-slate-600 mb-4">Account: <strong>@Model.Username</strong></p>
+<p class="text-center text-slate-500 text-sm mb-6">
+    Please enter your new password. The password must comply with the domain's security policy.
+</p>
+
+<form asp-action="Reset" method="post" class="space-y-6">
+    <input type="hidden" asp-for="Token" />
+    <input type="hidden" asp-for="Username" />
+
+    <div asp-validation-summary="ModelOnly" class="p-3 bg-red-50 border border-red-200 text-red-700 text-sm rounded-md"></div>
+
+    <div>
+        <label asp-for="NewPassword" class="block text-sm font-medium text-gray-700"></label>
+        <div class="mt-1">
+            <input asp-for="NewPassword" type="password"
+                   class="appearance-none block w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm placeholder-gray-400
+                          focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
+        </div>
+        <span asp-validation-for="NewPassword" class="text-red-600 text-xs mt-1"></span>
+    </div>
+
+    <div>
+        <label asp-for="ConfirmPassword" class="block text-sm font-medium text-gray-700"></label>
+        <div class="mt-1">
+            <input asp-for="ConfirmPassword" type="password"
+                   class="appearance-none block w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm placeholder-gray-400
+                          focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
+        </div>
+        <span asp-validation-for="ConfirmPassword" class="text-red-600 text-xs mt-1"></span>
+    </div>
+
+    <div class="mt-4 p-4 bg-slate-50 border border-slate-200 rounded-md">
+        <h4 class="text-sm font-semibold text-slate-800 mb-2">Password Requirements:</h4>
+        <ul class="list-disc list-inside text-sm text-slate-600 space-y-1">
+            <li>At least 8 characters.</li>
+            <li>Includes uppercase (A-Z) and lowercase (a-z) letters.</li>
+            <li>Includes at least one number (0-9).</li>
+            <li>Does not contain your account name.</li>
+        </ul>
+    </div>
+
+    <div>
+        <button type="submit"
+                class="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white
+                       bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500
+                       transition duration-150 ease-in-out">
+            Save
+        </button>
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

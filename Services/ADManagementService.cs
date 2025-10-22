@@ -482,7 +482,37 @@ namespace ADPasswordManager.Services
             return (true, $"Successfully deleted {successCount} users. Failed to delete {failCount} users.");
         }
 
+        // --- THÊM PHƯƠNG THỨC MỚI NÀY ---
+        public async Task ResetPasswordPublicAsync(string username, string newPassword)
+        {
+            try
+            {
+                using (var context = new PrincipalContext(ContextType.Domain, _domain, _serviceUser, _servicePassword))
+                {
+                    var user = UserPrincipal.FindByIdentity(context, IdentityType.SamAccountName, username);
+                    if (user != null)
+                    {
+                        user.SetPassword(newPassword);
 
+                        // Khi người dùng tự reset, không cần set "phải đổi" hoặc "không hết hạn"
+                        user.Enabled = true; // Đảm bảo tài khoản được enabled
+                        user.UnlockAccount(); // Mở khóa nếu tài khoản bị khóa
+
+                        await Task.Run(() => user.Save()); // Lưu thay đổi (Task.Run vì Save() là đồng bộ)
+                    }
+                    else
+                    {
+                        throw new Exception("User not found.");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error during public password reset for user: {username}");
+                // Ném lỗi ra ngoài để Controller bắt được
+                throw new Exception("Error resetting password in AD. Your password may not meet the domain's complexity requirements."); // <-- THAY ĐỔI
+            }
+        }
 
     }
 }

@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+﻿using ADPasswordManager.Models.Entities;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
 namespace ADPasswordManager.Data
@@ -11,5 +12,6 @@ namespace ADPasswordManager.Data
         }
 
         public DbSet<ADPasswordManager.Models.Entities.DelegationRule> DelegationRules { get; set; }
+        public DbSet<PasswordResetToken> PasswordResetTokens { get; set; }
     }
 }

@@ -1,6 +1,8 @@
+using ADPasswordManager.Data;
+using ADPasswordManager.Services;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
-using ADPasswordManager.Data;
+using ADPasswordManager.Models.Configuration;
 
 // Cấu hình logger của Serilog
 Log.Logger = new LoggerConfiguration()
@@ -37,8 +39,16 @@ try
     builder.Services.AddControllersWithViews();
     builder.Services.AddRazorPages();
 
+    // --- Thêm các dòng này ---
+    // Đọc cấu hình SmtpSettings
+    builder.Services.Configure<SmtpSettings>(builder.Configuration.GetSection("SmtpSettings"));
+    // Đăng ký EmailService
+    builder.Services.AddScoped<IEmailService, EmailService>();
+
     // Đăng ký ADAuthenticationService để sử dụng trong ứng dụng
     builder.Services.AddScoped<ADPasswordManager.Services.ADAuthenticationService>();
+    builder.Services.AddScoped<IPasswordResetService, PasswordResetService>();
+    builder.Services.AddHostedService<TokenCleanupService>();
 
     builder.Services.AddScoped<ADPasswordManager.Services.ADManagementService>();
 

@@ -1,0 +1,41 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - AD Password Management System</title>
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="icon" href="~/favicon.ico" />
+</head>
+<body class="bg-slate-100">
+    <div class="min-h-screen flex flex-col justify-start items-center py-12 px-4 sm:px-6 lg:px-8">
+
+        <div class="w-full max-w-7xl space-y-6">
+
+            <header>
+                <div class="flex flex-col items-center">
+                    <div class="flex-shrink-0 p-3 bg-blue-600 rounded-full">
+                        <svg class="h-8 w-8 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                        </svg>
+                    </div>
+                    <h2 class="mt-4 text-center text-3xl font-extrabold text-gray-900">
+                        AD Password Management System
+                    </h2>
+                </div>
+            </header>
+
+            <main role="main" class="bg-white p-8 sm:p-10 border border-slate-200 shadow-lg rounded-xl">
+                @RenderBody()
+            </main>
+
+            <footer class="text-center text-sm text-slate-500">
+                &copy; @DateTime.Now.Year - AlliedSoft.
+            </footer>
+        </div>
+    </div>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

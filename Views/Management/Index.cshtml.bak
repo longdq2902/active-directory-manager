@@ -1,9 +1,7 @@
-﻿@inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Antiforgery
-@model ADPasswordManager.Models.ViewModels.UserManagementViewModel
+﻿@model ADPasswordManager.Models.ViewModels.UserManagementViewModel
 @{
     ViewData["Title"] = "User Management";
 }
-<input type="hidden" id="RequestVerificationToken" name="__RequestVerificationToken" value="@Antiforgery.GetAndStoreTokens(Context).RequestToken" />
 
 <div id="reset-password-modal"
      class="fixed inset-0 z-50 hidden"
@@ -11,7 +9,7 @@
     <div class="absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity"></div>
     <div class="relative h-full w-full flex items-center justify-center p-4">
         <div data-panel
-             class="w-full max-w-2xl  border border-gray-200   bg-gray-200 rounded-2xl shadow-2xl ring-1 ring-black/5 overflow-hidden transform transition duration-150 ease-out ">
+             class="w-full max-w-2xl  border border-gray-200   bg-gray-200 rounded-2xl shadow-2xl ring-1 ring-black/5 overflow-hidden transform transition duration-150 ease-out opacity-0 scale-95">
             <div class="flex items-center justify-between px-5 py-4 border-b">
                 <div class="flex items-center gap-3">
                     <div class="h-9 w-9 inline-flex items-center justify-center rounded-xl bg-indigo-50">
@@ -48,7 +46,7 @@
     <div class="absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity"></div>
     <div class="relative h-full w-full flex items-center justify-center p-4">
         <div data-panel
-             class="w-full max-w-7xl  border border-gray-200   bg-gray-200 rounded-2xl shadow-2xl ring-1 ring-black/5 overflow-hidden transform transition duration-150 ease-out">
+             class="w-full max-w-7xl  border border-gray-200   bg-gray-200 rounded-2xl shadow-2xl ring-1 ring-black/5 overflow-hidden transform transition duration-150 ease-out opacity-0 scale-95">
             <div class="flex items-center justify-between px-5 py-4 border-b">
                 <div class="flex items-center gap-3">
                     <div class="h-9 w-9 inline-flex items-center justify-center rounded-xl bg-indigo-50">
@@ -85,7 +83,7 @@
     <div class="absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity"></div>
     <div class="relative h-full w-full flex items-center justify-center p-4">
         <div data-panel
-             class="w-full max-w-xl  border border-gray-200   bg-gray-200 rounded-2xl shadow-2xl ring-1 ring-black/5 overflow-hidden transform transition duration-150 ease-out ">
+             class="w-full max-w-xl  border border-gray-200   bg-gray-200 rounded-2xl shadow-2xl ring-1 ring-black/5 overflow-hidden transform transition duration-150 ease-out opacity-0 scale-95">
             <div class="flex items-center justify-between px-5 py-4 border-b">
                 <div class="flex items-center gap-3">
                     <div class="h-9 w-9 inline-flex items-center justify-center rounded-xl bg-red-50">
@@ -142,7 +140,7 @@
                 </ul>
             </div>
         </div>
-        <div class="w-full md:w-3/4 flex flex-col h-full">
+        <div class="w-full md:w-3/4 px-4 flex flex-col h-full">
 
             <div class="flex justify-between items-center mb-6">
                 <h1 class="text-3xl font-bold text-gray-800">@ViewData["Title"]</h1>
@@ -223,48 +221,12 @@
                                     }
                                 </td>
 
-                                @* <td class="px-5 py-4 text-sm">
+                                <td class="px-5 py-4 text-sm">
                                     <a href="@Url.Action("ResetPassword", new { username = user.Username })"
                                        data-username="@user.Username"
                                        class="reset-password-link text-indigo-600 hover:text-indigo-900 font-semibold">
                                         Reset Password
                                     </a>
-
-
-                                    <a href="#"
-                                       class="send-reset-link text-green-600 hover:text-green-900 font-semibold"
-                                       data-username="@user.Username"
-                                       data-email="@user.EmailAddress"
-                                       title="Send password reset link to user's email">
-                                        Send Reset Link
-                                    </a>
-                                </td> *@
-                                <td class="px-5 py-4 text-sm">
-                                    <div class="flex items-center space-x-2">
-
-                                        <a href="@Url.Action("ResetPassword", new { username = user.Username })"
-                                           data-username="@user.Username"
-                                           class="reset-password-link inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-
-                                            <svg class="w-4 h-4 mr-1.5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                                                <path fill-rule="evenodd" d="M18 8a6 6 0 01-7.743 5.743L10 14l-1 1-1 1H6v2H2v-4l1-1 1-1 1.257-1.257A6 6 0 1118 8zm-6-4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" />
-                                            </svg>
-                                            Reset Password
-                                        </a>
-
-                                        <a href="#"
-                                           class="send-reset-link inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
-                                           data-username="@user.Username"
-                                           data-email="@user.EmailAddress"
-                                           title="Send password reset link to user's email">
-
-                                            <svg class="w-4 h-4 mr-1.5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                                                <path d="M3 4a2 2 0 00-2 2v1.161l8.441 4.221a1.25 1.25 0 001.118 0L19 7.162V6a2 2 0 00-2-2H3z" />
-                                                <path d="M19 8.839l-7.77 3.885a2.75 2.75 0 01-2.46 0L1 8.839V14a2 2 0 002 2h14a2 2 0 002-2V8.839z" />
-                                            </svg>
-                                            Send Link
-                                        </a>
-                                    </div>
                                 </td>
                             </tr>
                         }
@@ -438,115 +400,6 @@
                     }
                 });
             }
-
-            // --- Tự động ẩn thông báo TempData ---
-            const successAlert = document.querySelector('.bg-green-100[role="alert"]'); // Tìm thông báo thành công [cite: 157]
-            const errorAlert = document.querySelector('.bg-red-100[role="alert"]'); // Tìm thông báo lỗi (nếu có)
-
-            if (successAlert) {
-                setTimeout(() => {
-                    successAlert.style.display = 'none'; // Ẩn đi sau 2 giây
-                }, 2000); // 2000 milliseconds = 2 seconds
-            }
-
-            if (errorAlert) {
-                setTimeout(() => {
-                    errorAlert.style.display = 'none'; // Ẩn đi sau 2 giây
-                }, 2000);
-            }
-            // --- Kết thúc tự động ẩn ---
-
-            // ===================================================
-            // === 4. BẮT ĐẦU CODE MỚI CHO "SEND RESET LINK" ===
-            // ===================================================
-            const sendResetLinks = document.querySelectorAll('.send-reset-link');
-            // Lấy token từ thẻ input ẩn ở đầu file Index.cshtml
-            const token = document.getElementById('RequestVerificationToken').value;
-
-            // Tham chiếu đến spinner đã có
-            const mainSpinner = document.getElementById('loading-spinner');
-
-            // --- TÁCH HTML GỐC RA ĐỂ DÙNG LẠI ---
-            const sendLinkOriginalHtml = `
-                <svg class="w-4 h-4 mr-1.5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                    <path d="M3 4a2 2 0 00-2 2v1.161l8.441 4.221a1.25 1.25 0 001.118 0L19 7.162V6a2 2 0 00-2-2H3z" />
-                    <path d="M19 8.839l-7.77 3.885a2.75 2.75 0 01-2.46 0L1 8.839V14a2 2 0 002 2h14a2 2 0 002-2V8.839z" />
-                </svg>
-                Send Link`; // <-- (Chữ gốc là "Send Link", không phải "Send Reset Link")
-            // ------------------------------------
-
-            sendResetLinks.forEach(link => {
-                link.addEventListener('click', function (e) {
-                    e.preventDefault(); // Ngăn thẻ <a> điều hướng
-
-                    const thisLink = this; // 'this' là thẻ <a> được click
-                    const username = thisLink.dataset.username;
-                    const email = thisLink.dataset.email; 
-
-                    if (!email) {
-                        alert('Error: This user does not have an email address specified in AD.');
-                        return;
-                    }
-
-                    if (!confirm('Are you sure you want to send a password reset link to ' + username + ' (' + email + ')?')) {
-                        return;
-                    }
-
-                    // Vô hiệu hóa link và hiển thị spinner
-                    thisLink.style.pointerEvents = 'none';
-                   thisLink.innerHTML = `
-                        <svg class="w-4 h-4 mr-1.5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                            <path d="M3 4a2 2 0 00-2 2v1.161l8.441 4.221a1.25 1.25 0 001.118 0L19 7.162V6a2 2 0 00-2-2H3z" />
-                            <path d="M19 8.839l-7.77 3.885a2.75 2.75 0 01-2.46 0L1 8.839V14a2 2 0 002 2h14a2 2 0 002-2V8.839z" />
-                        </svg>
-                        Sending...`;
-                    if (mainSpinner) mainSpinner.classList.remove('hidden');
-
-                    // Chuẩn bị dữ liệu cho AJAX (dạng form)
-                    const formData = new URLSearchParams();
-                    formData.append('__RequestVerificationToken', token);
-                    formData.append('username', username);
-                    formData.append('userEmail', email);
-
-                    // Sử dụng fetch (AJAX của JS thuần)
-                    fetch('@Url.Action("SendResetLink", "Management")', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/x-www-form-urlencoded'
-                        },
-                        body: formData
-                    })
-                    .then(response => {
-                        if (!response.ok) {
-                            return response.json().then(err => Promise.reject(err));
-                        }
-                        return response.json();
-                    })
-                    .then(data => {
-                        // Xử lý JSON trả về từ Action (success: true/false)
-                        if (data.success) {
-                            alert(data.message); // Thông báo thành công
-                        } else {
-                            alert('Error: ' + data.message); // Thông báo lỗi
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error sending reset link:', error);
-                        alert('An unexpected error occurred. ' + (error.message || 'Check console.'));
-                    })
-                    .finally(() => {
-                        // Luôn chạy sau khi hoàn tất (dù thành công hay lỗi)
-                        // Khôi phục link và ẩn spinner
-                        thisLink.style.pointerEvents = 'auto';
-                       thisLink.innerHTML = sendLinkOriginalHtml; // Khôi phục HTML gốc
-                        if (mainSpinner) mainSpinner.classList.add('hidden');
-                    });
-                });
-            });
-            // === KẾT THÚC CODE MỚI ===
-            // ===================================================
-
-
         });
     </script>
 }
