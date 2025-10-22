@@ -69,7 +69,7 @@
                             <td class="px-5 py-4 text-sm"><p class="text-gray-900 whitespace-no-wrap">@rule.AdminGroup</p></td>
                             <td class="px-5 py-4 text-sm">
                                 <div class="flex flex-wrap gap-2">
-                                    @foreach (var group in rule.ManagedGroups.Split(';', StringSplitOptions.RemoveEmptyEntries))
+                                    @foreach (var group in rule.ManagedGroups.Split(',', StringSplitOptions.RemoveEmptyEntries))
                                     {
                                         <div class="px-2 py-1 bg-gray-200 text-gray-800 text-xs font-medium rounded-full whitespace-nowrap">@group</div>
                                     }
