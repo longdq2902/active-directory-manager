@@ -63,15 +63,24 @@ namespace ADPasswordManager.Services
                 _context.PasswordResetTokens.Add(tokenRecord);
                 await _context.SaveChangesAsync();
 
-                // 5. Soạn và gửi email
-                string subject = "Active Directory Password Reset Request"; 
-                string body = $@"
-                    <p>Hello,</p>
-                    <p>We received a request to reset the password for your account <strong>{username}</strong>.</p>
-                    <p>Please click the link below to set a new password. This link will expire in {tokenLifetimeMinutes} minutes.</p>
-                    <p><a href='{resetLink}'><strong>RESET YOUR PASSWORD</strong></a></p>
-                    <p>If you did not request this, please ignore this email.</p>
-                    <p>Regards,<br>AD Management System</p>"; 
+                // 5. Read email template from config and send email
+                string subjectTemplate = _configuration["EmailTemplates:PasswordReset:Subject"];
+                string bodyTemplate = _configuration["EmailTemplates:PasswordReset:BodyHtml"];
+                //int tokenLifetimeMinutes = _configuration.GetValue<int>("TaskSettings:TokenLifetimeMinutes", 15); // Read lifetime again
+
+                if (string.IsNullOrWhiteSpace(subjectTemplate) || string.IsNullOrWhiteSpace(bodyTemplate))
+                {
+                    _logger.LogError("Email subject or body template is missing in appsettings.json.");
+                    throw new Exception("Email template configuration error.");
+                }
+
+                // Replace placeholders
+                string subject = subjectTemplate; // Subject might not need placeholders, but kept for consistency
+                string body = bodyTemplate
+                                .Replace("{username}", username)
+                                .Replace("{resetLink}", resetLink)
+                                .Replace("{tokenLifetimeMinutes}", tokenLifetimeMinutes.ToString());
+
 
                 await _emailService.SendEmailAsync(userEmail, subject, body);
 
