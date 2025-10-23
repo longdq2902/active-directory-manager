@@ -1,0 +1,16 @@
+﻿@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Processing...</title>
+</head>
+<body>
+    <script>
+        // Gửi tin nhắn 'userSaved'.
+        // JS của Index.cshtml (dòng 438) sẽ bắt tin nhắn này và reload.
+        window.parent.postMessage('userSaved', '*');
+    </script>
+</body>
+</html>

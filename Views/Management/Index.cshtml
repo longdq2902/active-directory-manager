@@ -114,7 +114,42 @@
         </div>
     </div>
 </div>
+</div>
+</div>
 
+<div id="toggle-status-confirm-modal"
+     class="fixed inset-0 z-50 hidden"
+     role="dialog" aria-modal="true" aria-labelledby="toggle-title" tabindex="-1">
+    <div class="absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity"></div>
+    <div class="relative h-full w-full flex items-center justify-center p-4">
+        <div data-panel
+             class="w-full max-w-xl border border-gray-200 bg-gray-200 rounded-2xl shadow-2xl ring-1 ring-black/5 overflow-hidden transform transition duration-150 ease-out ">
+            <div class="flex items-center justify-between px-5 py-4 border-b">
+                <div class="flex items-center gap-3">
+                    <div class="h-9 w-9 inline-flex items-center justify-center rounded-xl bg-yellow-50">
+                        <svg class="h-5 w-5 text-yellow-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126z" />
+                        </svg>
+                    </div>
+                    <h3 id="toggle-title" class="text-lg sm:text-xl font-semibold text-gray-900">
+                        Confirm Status Change
+                    </h3>
+                </div>
+                <button id="close-modal-toggle-btn" type="button"
+                        class="inline-flex items-center justify-center rounded-xl p-2 text-gray-500 hover:text-gray-900 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        aria-label="Close">
+                    <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                    </svg>
+                </button>
+            </div>
+            <div class="p-0">
+                <iframe id="toggle-status-confirm-iframe" src="about:blank"
+                        class="block w-full" style="height: 350px;" frameborder="0"></iframe>
+            </div>
+        </div>
+    </div>
+</div>
 
 <div class="h-full">
     <div class="flex flex-col md:flex-row h-full gap-4">
@@ -197,6 +232,7 @@
                             <th class="px-5 py-3">Email</th>
                             <th class="px-5 py-3 text-center">Never Expires</th>
                             <th class="px-5 py-3 text-center">Change At Logon</th>
+                            <th class="px-5 py-3 text-center">Status</th>
                             <th class="px-5 py-3">Actions</th>
                         </tr>
                     </thead>
@@ -223,22 +259,42 @@
                                     }
                                 </td>
 
-                                @* <td class="px-5 py-4 text-sm">
-                                    <a href="@Url.Action("ResetPassword", new { username = user.Username })"
-                                       data-username="@user.Username"
-                                       class="reset-password-link text-indigo-600 hover:text-indigo-900 font-semibold">
-                                        Reset Password
-                                    </a>
-
-
-                                    <a href="#"
-                                       class="send-reset-link text-green-600 hover:text-green-900 font-semibold"
-                                       data-username="@user.Username"
-                                       data-email="@user.EmailAddress"
-                                       title="Send password reset link to user's email">
-                                        Send Reset Link
-                                    </a>
-                                </td> *@
+                               <td class="px-5 py-4 text-sm">
+                                <label for="toggle-input-@user.Username" class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" 
+                                           value="" 
+                                           id="toggle-input-@user.Username"
+                                           class="sr-only peer toggle-status-input" 
+                                           data-username="@user.Username"
+                                               data-is-enabled="@user.IsEnabled.ToString().ToLowerInvariant()"
+                                           @if (user.IsEnabled) { <text>checked</text> }
+                                    >
+                                    <div class="w-11 h-6 bg-gray-200 rounded-full 
+                                                peer peer-focus:outline-none 
+                                                peer-focus:ring-4 peer-focus:ring-blue-300 
+                                                dark:peer-focus:ring-blue-800 
+                                                peer-checked:after:translate-x-full 
+                                                peer-checked:after:border-white 
+                                                after:content-[''] 
+                                                after:absolute after:top-[2px] after:left-[2px] 
+                                                after:bg-white after:border-gray-300 after:border after:rounded-full 
+                                                after:h-5 after:w-5 
+                                                after:transition-all 
+                                                dark:border-gray-600 
+                                                peer-checked:bg-green-600">
+                                    </div>
+                                    <span id="status-text-@user.Username" class="ml-3 text-sm font-medium text-gray-900">
+                                        @if (user.IsEnabled)
+                                        {
+                                            <text>Enabled</text>
+                                        }
+                                        else
+                                        {
+                                            <text>Disabled</text>
+                                        }
+                                    </span>
+                                </label>
+                        </td>
                                 <td class="px-5 py-4 text-sm">
                                     <div class="flex items-center space-x-2">
 
@@ -368,29 +424,58 @@
                 if (e.target === deleteConfirmModal) closeDeleteModal();
             });
 
+            // --- 4. TOGGLE STATUS CONFIRM MODAL (MỚI) ---
+        // (Thêm khối code này vào)
+        const toggleStatusModal = document.getElementById('toggle-status-confirm-modal');
+        const toggleStatusIframe = document.getElementById('toggle-status-confirm-iframe');
+        const closeToggleStatusModalBtn = document.getElementById('close-modal-toggle-btn');
 
-            // --- 4. BỘ LẮNG NGHE MESSAGE TỪ IFRAME (Cập nhật) ---
-            window.addEventListener('message', function (event) {
-                // Từ ResetPassword.cshtml
-                if (event.data === 'resetSuccess') {
-                    closeResetModal();
-                    spinner.classList.remove('hidden');
-                    window.location.reload();
-                }
+        const openToggleStatusModal = (url, height = '250px') => {
+            toggleStatusIframe.style.height = height;
+            toggleStatusIframe.src = url;
+            toggleStatusModal.classList.remove('hidden');
+        };
 
-                // Từ CreateUser.cshtml hoặc DeleteMultipleConfirmation.cshtml
-                if (event.data === 'userSaved') {
-                    closeCreateUserModal(); // Đóng cả hai...
-                    closeDeleteModal();     // ...để chắc chắn
-                    window.location.reload();
-                }
+        const closeToggleStatusModal = () => {
+            toggleStatusModal.classList.add('hidden');
+            toggleStatusIframe.src = 'about:blank';
+        };
 
-                // Từ CreateUser.cshtml hoặc DeleteMultipleConfirmation.cshtml
-                if (event.data === 'closeUserModal') {
-                    closeCreateUserModal();
-                    closeDeleteModal();
-                }
-            }, false);
+        closeToggleStatusModalBtn.addEventListener('click', closeToggleStatusModal);
+        toggleStatusModal.addEventListener('click', (e) => {
+            if (e.target === toggleStatusModal) closeToggleStatusModal();
+        });
+        // --- KẾT THÚC KHỐI CODE 4 ---
+
+
+            // --- 5. BỘ LẮNG NGHE MESSAGE TỪ IFRAME (Đã sửa) ---
+        window.addEventListener('message', function (event) {
+            // Từ ResetPassword.cshtml
+            if (event.data === 'resetSuccess') {
+                closeResetModal();
+                spinner.classList.remove('hidden');
+                window.location.reload();
+            }
+
+            // Từ Create, Delete, HOẶC TOGGLE STATUS
+            // (Tin nhắn 'userSaved' được gửi từ ReloadParent.cshtml)
+            if (event.data === 'userSaved') {
+                closeCreateUserModal();
+                closeDeleteModal();
+                closeToggleStatusModal(); // <-- THÊM DÒNG NÀY
+                spinner.classList.remove('hidden'); // Hiển thị spinner trước khi reload
+                window.location.reload();
+            }
+
+            // Từ Create, Delete, HOẶC TOGGLE STATUS
+            // (Tin nhắn 'closeUserModal' được gửi từ nút Cancel của iframe)
+            if (event.data === 'closeUserModal') {
+                closeCreateUserModal();
+                closeDeleteModal();
+                closeToggleStatusModal(); // <-- THÊM DÒNG NÀY
+            }
+        }, false);
+        // --- KẾT THÚC SỬA ĐỔI ---
 
 
             // --- 5. SCRIPT XÓA HÀNG LOẠT (Cập nhật) ---
@@ -543,8 +628,35 @@
                     });
                 });
             });
-            // === KẾT THÚC CODE MỚI ===
+
+            
             // ===================================================
+        // === 7. CODE MỚI CHO "ENABLE/DISABLE TOGGLE" (Bản Modal) ===
+        // ===================================================
+        const toggleInputs = document.querySelectorAll('.toggle-status-input');
+
+        toggleInputs.forEach(toggle => {
+            // Chúng ta dùng 'click' thay vì 'change'
+            // để có thể ngăn chặn (preventDefault) hành động gạt nút
+            toggle.addEventListener('click', function (e) {
+                // Ngăn hành động gạt nút ngay lập tức
+                e.preventDefault();
+
+                const thisToggle = this;
+                const username = thisToggle.dataset.username;
+
+                // Đọc trạng thái GỐC từ data-attribute
+                const originalIsEnabled = (thisToggle.dataset.isEnabled === 'true');
+
+                // 1. MỞ MODAL XÁC NHẬN
+                // Gọi Action [HttpGet] ToggleStatusConfirmation (từ Giai đoạn 2.1)
+                // URL sẽ là: /Management/ToggleStatusConfirmation?username=user&isEnabled=true
+                let url = `@Url.Action("ToggleStatusConfirmation", "Management")?username=${encodeURIComponent(username)}&isEnabled=${originalIsEnabled}`;
+
+                // 2. Gọi hàm JS chúng ta vừa thêm ở Bước 4.1
+                openToggleStatusModal(url);
+            });
+        });
 
 
         });

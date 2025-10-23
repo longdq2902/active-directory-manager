@@ -48,7 +48,8 @@ namespace ADPasswordManager.Controllers
                 DisplayName = user.DisplayName,
                 EmailAddress = user.EmailAddress,
                 IsPasswordNeverExpires = user.PasswordNeverExpires,
-                IsPasswordChangeRequired = (user.LastPasswordSet == null)
+                IsPasswordChangeRequired = (user.LastPasswordSet == null),
+                IsEnabled = user.Enabled ?? false
             }).ToList();
 
             // THÊM MỚI: Hàm helper để tạo tên hiển thị "thân thiện" cho OU
@@ -282,6 +283,62 @@ namespace ADPasswordManager.Controllers
                 _logger.LogError(ex, $"Failed to send reset link for '{username}'.");
                 return Json(new { success = false, message = "An error occurred: " + ex.Message });
             }
+        }
+
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult ToggleAccountStatus(string username)
+        {
+            if (string.IsNullOrWhiteSpace(username))
+            {
+                // Trường hợp này ít xảy ra, nhưng set lỗi và reload
+                TempData["ErrorMessage"] = "An error occurred: Username was missing.";
+                return View("ReloadParent");
+            }
+
+            try
+            {
+                // 1. Gọi Service (Giai đoạn 1) để thực hiện hành động
+                bool newStatus = _adManagementService.ToggleUserAccountStatus(username);
+                string newStatusText = newStatus ? "Enabled" : "Disabled";
+
+                // 2. Ghi log thành công
+                _logger.LogInformation($"Admin successfully toggled account status for '{username}' to {newStatusText}.");
+
+                // 3. Đặt thông báo thành công vào TempData
+                // (Trang Index.cshtml sẽ tự động đọc và hiển thị)
+                TempData["SuccessMessage"] = $"Account for '{username}' has been successfully {newStatusText}.";
+            }
+            catch (Exception ex)
+            {
+                // 4. Bắt lỗi (ví dụ: "User not found")
+                _logger.LogError(ex, $"Failed to toggle account status for '{username}'.");
+
+                // 5. Đặt thông báo lỗi vào TempData
+                TempData["ErrorMessage"] = "An error occurred: " + ex.Message;
+            }
+
+            // 6. Luôn trả về View "ReloadParent". 
+            // View này sẽ gửi tin nhắn 'userSaved' lên trang cha (Index.cshtml).
+            return View("ReloadParent");
+        }
+
+
+
+        [HttpGet]
+        public IActionResult ToggleStatusConfirmation(string username, bool isEnabled)
+        {
+            if (string.IsNullOrWhiteSpace(username))
+            {
+                return View("Error"); // Hoặc một view lỗi chung
+            }
+
+            // Truyền 2 giá trị này sang View
+            ViewBag.Username = username;
+            ViewBag.IsEnabled = isEnabled;
+
+            return View(); // Sẽ trả về Views/Management/ToggleStatusConfirmation.cshtml
         }
 
         // code thêm vào trước chỗ này

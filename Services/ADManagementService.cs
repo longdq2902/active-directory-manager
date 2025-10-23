@@ -130,53 +130,7 @@ namespace ADPasswordManager.Services
         }
 
 
-        //public List<string> GetManagedGroupNamesForAdmin(string adminUsername)
-        //{
-        //    _logger.LogDebug("--- Starting GetManagedGroupNamesForAdmin for user: {user} ---", adminUsername);
-        //    var groupsToManage = new HashSet<string>();
-        //    var allRules = _context.DelegationRules.ToList();
-
-        //    if (string.IsNullOrEmpty(_domain) || !allRules.Any())
-        //    {
-        //        _logger.LogWarning("AD domain is not configured or no delegation rules found in the database.");
-        //        return new List<string>();
-        //    }
-
-        //    try
-        //    {
-        //        using (var context = new PrincipalContext(ContextType.Domain, _domain, _serviceUser, _servicePassword))
-        //        {
-        //            var adminUser = UserPrincipal.FindByIdentity(context, IdentityType.SamAccountName, adminUsername);
-        //            if (adminUser == null)
-        //            {
-        //                _logger.LogWarning("Could not find admin user '{adminUsername}' in AD.", adminUsername);
-        //                return new List<string>();
-        //            }
-
-        //            var adminMemberOfGroups = adminUser.GetAuthorizationGroups();
-        //            var adminGroupNames = new HashSet<string>(adminMemberOfGroups.Select(g => g.SamAccountName));
-
-        //            foreach (var rule in allRules)
-        //            {
-        //                if (adminGroupNames.Contains(rule.AdminGroup))
-        //                {
-        //                    var managedGroupsFromRule = rule.ManagedGroups.Split(',', StringSplitOptions.RemoveEmptyEntries);
-        //                    foreach (var managedGroup in managedGroupsFromRule)
-        //                    {
-        //                        groupsToManage.Add(managedGroup.Trim());
-        //                    }
-        //                }
-        //            }
-        //        }
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        _logger.LogError(ex, "An error occurred while getting managed groups for '{adminUsername}'.", adminUsername);
-        //    }
-
-        //    _logger.LogDebug("--- Finished GetManagedGroupNamesForAdmin. Found {count} unique groups. ---", groupsToManage.Count);
-        //    return groupsToManage.OrderBy(g => g).ToList();
-        //}
+      
         public List<string> GetManagedOUNamesForAdmin(string adminUsername)
         {
             _logger.LogDebug("--- Starting GetManagedOUNamesForAdmin for user: {user} ---", adminUsername);
@@ -250,7 +204,8 @@ namespace ADPasswordManager.Services
                         DisplayName = user.DisplayName,
                         EmailAddress = user.EmailAddress,
                         IsPasswordNeverExpires = user.PasswordNeverExpires,
-                        IsPasswordChangeRequired = (user.LastPasswordSet == null)
+                        IsPasswordChangeRequired = (user.LastPasswordSet == null),
+                        IsEnabled = user.Enabled ?? false
                     };
                     return userViewModel;
                 }
@@ -513,6 +468,48 @@ namespace ADPasswordManager.Services
                 throw new Exception("Error resetting password in AD. Your password may not meet the domain's complexity requirements."); // <-- THAY ĐỔI
             }
         }
+
+
+
+        public bool ToggleUserAccountStatus(string username)
+        {
+            _logger.LogInformation($"Attempting to toggle account status for user: {username}");
+            try
+            {
+                // Sử dụng các biến _domain, _serviceUser, _servicePassword đã có
+                using (var context = new PrincipalContext(ContextType.Domain, _domain, _serviceUser, _servicePassword))
+                {
+                    var user = UserPrincipal.FindByIdentity(context, IdentityType.SamAccountName, username);
+                    if (user != null)
+                    {
+                        // Đọc trạng thái hiện tại (mặc định là false nếu null)
+                        bool currentStatus = user.Enabled ?? false;
+
+                        // Đảo ngược trạng thái
+                        user.Enabled = !currentStatus;
+
+                        user.Save();
+
+                        _logger.LogInformation($"Successfully toggled account status for {username} to {user.Enabled}.");
+
+                        // Trả về trạng thái MỚI (đảm bảo nó không null)
+                        return user.Enabled ?? false;
+                    }
+                    else
+                    {
+                        _logger.LogWarning($"ToggleAccountStatus failed: User {username} not found.");
+                        throw new Exception("User not found.");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error toggling account status for user: {username}");
+                throw; // Ném lỗi ra ngoài để Controller bắt
+            }
+        }
+
+        // theem moi ham truoc cho nay
 
     }
 }
