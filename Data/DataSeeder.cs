@@ -35,7 +35,8 @@ public static class DataSeeder
                         {
                             AdminGroup = mapping.AdminGroup,
                             // Chuyển danh sách ManagedGroups thành một chuỗi duy nhất, phân tách bằng dấu phẩy
-                            ManagedGroups = string.Join(",", mapping.ManagedGroups)
+                            ManagedGroups = string.Join(",", mapping.ManagedGroups),
+                            ManagedOUs = string.Join(";", mapping.ManagedOUs)
                         });
                     }
 

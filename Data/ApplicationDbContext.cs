@@ -13,5 +13,21 @@ namespace ADPasswordManager.Data
 
         public DbSet<ADPasswordManager.Models.Entities.DelegationRule> DelegationRules { get; set; }
         public DbSet<PasswordResetToken> PasswordResetTokens { get; set; }
+        public DbSet<OuSqlInstanceMapping> OuSqlInstanceMappings { get; set; }
+
+        protected override void OnModelCreating(ModelBuilder builder)
+        {
+            base.OnModelCreating(builder);
+
+
+            // --- THÊM DÒNG NÀY ĐỂ TẠO UNIQUE INDEX ---
+            builder.Entity<OuSqlInstanceMapping>()
+                   .HasIndex(m => m.OuDistinguishedName)
+                   .IsUnique();
+            // ----------------------------------------
+
+        }
+
     }
+
 }

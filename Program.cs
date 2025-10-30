@@ -1,14 +1,18 @@
 using ADPasswordManager.Data;
+using ADPasswordManager.Models.Configuration;
 using ADPasswordManager.Services;
+using Microsoft.CodeAnalysis.Elfie.Serialization;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
-using ADPasswordManager.Models.Configuration;
 
 // Cấu hình logger của Serilog
 Log.Logger = new LoggerConfiguration()
     .WriteTo.Console()
-    .WriteTo.File("logs/ad-password-manager-.txt", rollingInterval: RollingInterval.Day) // Ghi log ra file, mỗi ngày 1 file
+    .WriteTo.File(Path.Combine(AppContext.BaseDirectory, "logs/ad-password-manager-.txt"), rollingInterval: RollingInterval.Day)
     .CreateBootstrapLogger();
+
+
+
 
 Log.Information("Starting up the application");
 
@@ -22,7 +26,7 @@ try
         .ReadFrom.Services(services)
         .Enrich.FromLogContext()
         .WriteTo.Console()
-        .WriteTo.File("logs/ad-password-manager-.txt", rollingInterval: RollingInterval.Day)); // <-- Thêm dòng này
+        .WriteTo.File(@"C:\logs\ad-password-manager-.txt", rollingInterval: RollingInterval.Day)); // <-- Thêm dòng này
         
 
     // Add services to the container.
@@ -49,7 +53,7 @@ try
     builder.Services.AddScoped<ADPasswordManager.Services.ADAuthenticationService>();
     builder.Services.AddScoped<IPasswordResetService, PasswordResetService>();
     builder.Services.AddHostedService<TokenCleanupService>();
-
+    //builder.Services.AddScoped<ISqlManagementService, SqlManagementService>();
     builder.Services.AddScoped<ADPasswordManager.Services.ADManagementService>();
 
     var app = builder.Build();
