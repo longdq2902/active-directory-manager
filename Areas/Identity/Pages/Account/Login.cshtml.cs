@@ -19,6 +19,7 @@ using System.Security.Claims;
 using ADPasswordManager.Constants;
 using System.DirectoryServices.AccountManagement;
 using System.Runtime.Versioning;
+using ADPasswordManager.Data;
 
 namespace ADPasswordManager.Areas.Identity.Pages.Account
 {
@@ -31,18 +32,20 @@ namespace ADPasswordManager.Areas.Identity.Pages.Account
         private readonly ILogger<LoginModel> _logger;
         private readonly ADAuthenticationService adAuthService;
         private readonly IConfiguration _configuration; // <-- Thêm IConfiguration
+        private readonly ApplicationDbContext _context;
 
         public LoginModel(SignInManager<IdentityUser> signInManager,
             ILogger<LoginModel> logger,
             UserManager<IdentityUser> userManager,
             ADAuthenticationService adAuthService,
-            IConfiguration configuration) // <-- Thêm IConfiguration vào constructor
+            IConfiguration configuration, ApplicationDbContext context) // <-- Thêm IConfiguration vào constructor
         {
             _userManager = userManager;
             _signInManager = signInManager;
             _logger = logger;
             this.adAuthService = adAuthService;
             _configuration = configuration; // <-- Gán giá trị
+            _context = context;
         }
 
         [BindProperty]
@@ -107,35 +110,31 @@ namespace ADPasswordManager.Areas.Identity.Pages.Account
                         }
                     }
 
-                    // --- BẮT ĐẦU LOGIC GÁN VAI TRÒ ---
+                    // --- BẮT ĐẦU LOGIC GÁN VAI TRÒ (ĐÃ SỬA) ---
 
                     // Xóa các claim vai trò cũ (nếu có) để đảm bảo sạch sẽ
                     var existingClaims = await _userManager.GetClaimsAsync(user);
-                    var roleClaim = existingClaims.FirstOrDefault(c => c.Type == ClaimTypes.Role);
-                    if (roleClaim != null)
-                    {
-                        await _userManager.RemoveClaimAsync(user, roleClaim);
-                    }
+                    await _userManager.RemoveClaimsAsync(user, existingClaims);
 
-                    // Kiểm tra xem người dùng có phải là SuperAdmin không
-                    string superAdminGroup = _configuration.GetValue<string>("ADSettings:SuperAdminGroup");
-                    _logger.LogDebug("Admin group is: {superAdminGroup}", superAdminGroup);
+                    Claim newRoleClaim = null; // Khởi tạo là null
                     bool isSuperAdmin = false;
+                    bool isDelegatedAdmin = false;
 
-                    if (!string.IsNullOrEmpty(superAdminGroup))
+                    // Lấy thông tin tài khoản dịch vụ
+                    string serviceUser = _configuration.GetValue<string>("ADSettings:ServiceUser");
+                    string servicePassword = _configuration.GetValue<string>("ADSettings:ServicePassword");
+                    string domain = _configuration.GetValue<string>("ADSettings:Domain");
+
+                    try
                     {
-                        try
+                        using (var pc = new PrincipalContext(ContextType.Domain, domain, serviceUser, servicePassword))
                         {
-                            // Lấy thông tin tài khoản dịch vụ từ appsettings.json
-                            string serviceUser = _configuration.GetValue<string>("ADSettings:ServiceUser");
-                            string servicePassword = _configuration.GetValue<string>("ADSettings:ServicePassword");
-                            string domain = _configuration.GetValue<string>("ADSettings:Domain");
-
-                            // Sử dụng PrincipalContext với tài khoản dịch vụ để có quyền truy vấn AD
-                            using (var pc = new PrincipalContext(ContextType.Domain, domain, serviceUser, servicePassword))
+                            var userPrincipal = UserPrincipal.FindByIdentity(pc, IdentityType.SamAccountName, Input.Email);
+                            if (userPrincipal != null)
                             {
-                                var userPrincipal = UserPrincipal.FindByIdentity(pc, IdentityType.SamAccountName, Input.Email);
-                                if (userPrincipal != null)
+                                // 1. Kiểm tra SuperAdmin
+                                string superAdminGroup = _configuration.GetValue<string>("ADSettings:SuperAdminGroup");
+                                if (!string.IsNullOrEmpty(superAdminGroup))
                                 {
                                     var groupPrincipal = GroupPrincipal.FindByIdentity(pc, superAdminGroup);
                                     if (groupPrincipal != null && userPrincipal.IsMemberOf(groupPrincipal))
@@ -143,26 +142,62 @@ namespace ADPasswordManager.Areas.Identity.Pages.Account
                                         isSuperAdmin = true;
                                     }
                                 }
+
+                                // 2. Nếu không phải SuperAdmin, kiểm tra DelegatedAdmin
+                                if (!isSuperAdmin)
+                                {
+                                    // Lấy danh sách *tất cả* các nhóm admin từ DB
+                                    var allAdminGroups = _context.DelegationRules.Select(r => r.AdminGroup).Distinct().ToList();
+
+                                    foreach (var adminGroupName in allAdminGroups)
+                                    {
+                                        var delegGroup = GroupPrincipal.FindByIdentity(pc, adminGroupName);
+                                        if (delegGroup != null && userPrincipal.IsMemberOf(delegGroup))
+                                        {
+                                            isDelegatedAdmin = true;
+                                            break; // Chỉ cần thuộc 1 nhóm là đủ
+                                        }
+                                    }
+                                }
                             }
                         }
-                        catch (Exception ex)
-                        {
-                            _logger.LogError(ex, "Error checking SuperAdmin group membership for user {user}", Input.Email);
-                            // Xử lý lỗi (ví dụ: không thể kết nối AD), ở đây ta mặc định không phải super admin
-                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Error checking group membership for user {user}", Input.Email);
+                        ModelState.AddModelError(string.Empty, "Error verifying user roles.");
+                        return Page();
                     }
 
-                    // Gán claim vai trò tương ứng
-                    var newRoleClaim = isSuperAdmin
-                        ? new Claim(ClaimTypes.Role, Roles.SuperAdmin)
-                        : new Claim(ClaimTypes.Role, Roles.DelegatedAdmin);
+                    // 3. Gán vai trò dựa trên kết quả kiểm tra
+                    if (isSuperAdmin)
+                    {
+                        newRoleClaim = new Claim(ClaimTypes.Role, Roles.SuperAdmin);
+                        await _userManager.AddClaimAsync(user, newRoleClaim);
+                        await _signInManager.SignInWithClaimsAsync(user, isPersistent: false, new[] { newRoleClaim });
 
-                    await _userManager.AddClaimAsync(user, newRoleClaim);
+                        _logger.LogInformation("User {user} logged in with role {role}.", user.UserName, newRoleClaim.Value);
+                        return RedirectToAction("Index", "SuperAdmin");
+                    }
+                    else if (isDelegatedAdmin)
+                    {
+                        newRoleClaim = new Claim(ClaimTypes.Role, Roles.DelegatedAdmin);
+                        await _userManager.AddClaimAsync(user, newRoleClaim);
+                        await _signInManager.SignInWithClaimsAsync(user, isPersistent: false, new[] { newRoleClaim });
 
-                    // Đăng nhập lại để claim có hiệu lực
-                    await _signInManager.SignInWithClaimsAsync(user, isPersistent: false, new[] { newRoleClaim });
+                        _logger.LogInformation("User {user} logged in with role {role}.", user.UserName, newRoleClaim.Value);
+                        return RedirectToAction("Index", "Management");
+                    }
+                    else
+                    {
+                        // Đây là "Regular User". Họ đăng nhập thành công, nhưng không có vai trò.
+                        await _signInManager.SignInAsync(user, isPersistent: false);
+                        _logger.LogInformation("User {user} logged in, but has no assigned role in this application.", user.UserName);
 
-                    // --- KẾT THÚC LOGIC GÁN VAI TRÒ ---
+                        // Chuyển hướng họ đến trang "Access Denied".
+                        return RedirectToAction("AccessDenied", "Home");
+                    }
+                    // --- KẾT THÚC LOGIC GÁN VAI TRÒ (ĐÃ SỬA) ---
 
                     _logger.LogInformation("User {user} logged in with role {role}.", user.UserName, newRoleClaim.Value);
                     _logger.LogDebug("User {user} logged in with role {role}.", user.UserName, newRoleClaim.Value);

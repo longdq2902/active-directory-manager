@@ -1,4 +1,5 @@
-﻿using ADPasswordManager.Models.ViewModels;
+﻿using ADPasswordManager.Constants;
+using ADPasswordManager.Models.ViewModels;
 using ADPasswordManager.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -10,7 +11,7 @@ using System.Runtime.Versioning;
 
 namespace ADPasswordManager.Controllers
 {
-    [Authorize]
+    [Authorize(Roles = Roles.DelegatedAdmin)]
     [SupportedOSPlatform("windows")]
     public class ManagementController : Controller
     {
