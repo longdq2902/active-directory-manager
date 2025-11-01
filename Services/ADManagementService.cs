@@ -302,7 +302,7 @@ namespace ADPasswordManager.Services
 
         public List<string> GetAllOUs()
         {
-            _logger.LogDebug("--- Starting GetAllOUs ---");
+            _logger.LogWarning("--- Starting GetAllOUs ---");
             var ouList = new List<string>();
 
             if (string.IsNullOrEmpty(_domain) || string.IsNullOrEmpty(_serviceUser) || string.IsNullOrEmpty(_servicePassword))
@@ -314,24 +314,33 @@ namespace ADPasswordManager.Services
             try
             {
                 // Sử dụng PrincipalContext với root domain (không cần _serviceOU)
+                _logger.LogInformation("Connecting to domain: {_domain}", _domain);
+                _logger.LogInformation("Using account: {_serviceUser}", _serviceUser);
                 using (var context = new PrincipalContext(ContextType.Domain, _domain, _serviceUser, _servicePassword))
                 {
                     // Dùng DirectorySearcher để tìm kiếm hiệu quả các OU
                     using (var de = new DirectoryEntry($"LDAP://{_domain}", _serviceUser, _servicePassword))
-                    {
+                    {  
                         using (var searcher = new DirectorySearcher(de))
                         {
-                            searcher.Filter = "(objectCategory=organizationalUnit)";
+                            //searcher.Filter = "(objectCategory=organizationalUnit)";
+                            searcher.Filter = "(&(objectCategory=organizationalUnit)(!(cn=Builtin))(!(cn=Users)))";
                             searcher.SearchScope = SearchScope.Subtree;
                             searcher.PropertiesToLoad.Add("distinguishedName");
 
-                            foreach (SearchResult result in searcher.FindAll())
+                            var searchResults = searcher.FindAll();
+                            _logger.LogInformation("LDAP query found {OuCount} Organizational Units.", searchResults.Count);
+
+                            foreach (SearchResult result in searchResults)
                             {
+                               
                                 if (result.Properties.Contains("distinguishedName"))
                                 {
+                                    _logger.LogInformation((string)result.Properties["distinguishedName"][0]);
                                     ouList.Add((string)result.Properties["distinguishedName"][0]);
                                 }
                             }
+                            _logger.LogInformation("ouList: " + ouList.First());
                         }
                     }
                 }

@@ -1,0 +1,232 @@
+﻿@model IEnumerable<ADPasswordManager.Models.Entities.OuSqlInstanceMapping>
+
+@{
+    ViewData["Title"] = "SQL Instance Mappings";
+}
+
+<div id="sql-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
+    <div class="relative top-10 mx-auto p-5 border w-full max-w-2xl shadow-lg rounded-md bg-white">
+        <div class="flex justify-between items-center border-b pb-3">
+            <h3 id="modal-title" class="text-xl font-semibold text-gray-900"></h3>
+            <button id="close-modal-btn" class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm p-1.5 ml-auto inline-flex items-center">
+                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path></svg>
+            </button>
+        </div>
+        <div class="mt-4">
+            <iframe id="modal-iframe" src="about:blank" class="w-full h-[450px]" frameborder="0"></iframe>
+        </div>
+    </div>
+</div>
+
+<div class="flex justify-between items-center mb-4">
+    <h1 class="text-2xl font-semibold">SQL Instance Mappings</h1>
+    <div>
+        <button id="delete-selected-btn"
+                class="hidden inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700">
+            Delete Selected
+        </button>
+        <button id="create-btn" data-url="@Url.Action("Create")" data-title="Create New Mapping" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+            Create New
+        </button>
+    </div>
+</div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4" role="alert" id="success-alert">
+        <span class="block sm:inline">@TempData["SuccessMessage"]</span>
+    </div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert" id="error-alert">
+        <span class="block sm:inline">@TempData["ErrorMessage"]</span>
+    </div>
+}
+
+<div class="shadow overflow-hidden border-b border-gray-200 sm:rounded-lg">
+   
+    <form id="sql-form" asp-action="DeleteMultiple" method="post" class="flex-1 flex flex-col min-h-0">
+        <div class="bg-white shadow-md rounded-lg overflow-x-auto flex-1 overflow-y-auto">
+            <table class="min-w-full leading-normal" id="mappings-table">
+                <thead>
+                    <tr class="sticky top-0 border-b-2 border-gray-200 bg-gray-50 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                        <th class="px-5 py-3">
+                            <input type="checkbox" id="select-all-checkbox" class="form-checkbox h-4 w-4 text-indigo-600 transition duration-150 ease-in-out" />
+                        </th>
+                        <th class="px-5 py-3">Organizational Unit (OU)</th>
+                        <th class="px-5 py-3">SQL Instance Name</th>
+                        <th class="px-5 py-3">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var rule in Model)
+                    {
+                        <tr class="border-b border-gray-200 hover:bg-gray-100">
+                            <td class="px-5 py-4 text-sm">
+                                <input type="checkbox" class="rule-checkbox form-checkbox h-4 w-4 text-indigo-600 transition duration-150 ease-in-out" name="ruleIds" value="@rule.Id" />
+                            </td>
+                            <td class="px-5 py-4 text-sm">
+                                <div class="flex flex-wrap gap-2">
+                                    @foreach (var group in rule.OuDistinguishedName.Split(',', StringSplitOptions.RemoveEmptyEntries))
+                                    {
+                                        <div class="px-2 py-1 bg-gray-200 text-gray-800 text-xs font-medium rounded-full whitespace-nowrap">@group</div>
+                                    }
+                                </div>
+                            </td>
+                            <td class="px-5 py-4 text-sm"><p class="text-gray-900 whitespace-no-wrap">@rule.SqlInstanceName</p></td>
+                            <td class="px-5 py-4 text-sm whitespace-nowrap">
+                                <a href="@Url.Action("Edit", new { id = rule.Id })" class="edit-sqlmapping-btn text-indigo-600 hover:text-indigo-900 mr-4">Edit</a>
+                                <a href="@Url.Action("Delete", new { id = rule.Id })" class="delete-sqlmapping-btn text-red-600 hover:text-red-900">Delete</a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </form>
+
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const modal = document.getElementById('sql-modal'); // Đổi ID
+            const modalTitle = document.getElementById('modal-title');
+            const modalIframe = document.getElementById('modal-iframe');
+            const closeModalBtn = document.getElementById('close-modal-btn');
+            const modalOverlay = document.querySelector('#sql-modal > div'); // Đổi ID
+
+            function openModal(url, title, height = '450px') {
+                modalTitle.textContent = title;
+                modalIframe.src = url;
+                modalIframe.style.height = height;
+                modal.classList.remove('hidden');
+            }
+
+            function closeModal() {
+                modal.classList.add('hidden');
+                modalIframe.src = 'about:blank';
+            }
+
+            function closeModalAndReload() {
+                closeModal();
+                location.reload();
+            }
+
+            // --- Event Listeners ---
+            document.getElementById('create-btn').addEventListener('click', function(e) {
+                openModal(this.dataset.url, this.dataset.title);
+            });
+
+            // document.getElementById('mappings-table').addEventListener('click', function(e) {
+            //     if (e.target.classList.contains('edit-btn')) {
+            //         openModal(e.target.dataset.url, e.target.dataset.title);
+            //     }
+            //     if (e.target.classList.contains('delete-btn')) {
+            //         openModal(e.target.dataset.url, e.target.dataset.title, '25rem');
+            //     }
+            // });
+
+             // Event listener cho các nút Edit
+            document.querySelectorAll('.edit-sqlmapping-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    openModal(e.currentTarget.href, 'Edit Rule');
+                });
+            });
+             // Event listener cho các nút Delete
+            document.querySelectorAll('.delete-sqlmapping-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    openModal(e.currentTarget.href, 'Confirm Deletion', '20rem'); // Chiều cao nhỏ hơn cho modal confirm
+                });
+            });
+
+            closeModalBtn.addEventListener('click', closeModal);
+
+            // Đóng modal khi click ra ngoài
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    closeModal();
+                }
+            });
+
+             // Lắng nghe message từ iframe để đóng modal và reload trang
+            window.addEventListener('message', function (event) {
+                if (event.data === 'ruleSaved') {
+                    closeModalAndReload();
+                    window.location.reload(); // Reload trang chính
+                }
+                 if (event.data === 'closeModal') { // Cho phép iframe yêu cầu đóng
+                    closeModalAndReload();
+                }
+            }, false);
+
+            // --- Message Listener ---
+            window.addEventListener('message', function(event) {
+                // Đổi tên message thành 'closeSqlMappingModal'
+                if (event.data === 'closeSqlMappingModal') {
+                    closeModalAndReload();
+                }
+            }, false);
+
+            // --- TempData Alert Auto-hide ---
+            const successAlert = document.getElementById('success-alert');
+            if (successAlert) {
+                setTimeout(() => { successAlert.style.display = 'none'; }, 2000);
+            }
+            const errorAlert = document.getElementById('error-alert');
+            if (errorAlert) {
+                setTimeout(() => { errorAlert.style.display = 'none'; }, 2000);
+            }
+
+            // --- Script cho xóa hàng loạt ---
+            const selectAllCheckbox = document.getElementById('select-all-checkbox');
+            const ruleCheckboxes = document.querySelectorAll('.rule-checkbox');
+            const deleteSelectedBtn = document.getElementById('delete-selected-btn');
+
+            function toggleDeleteButton() {
+                 if(!deleteSelectedBtn) return; // Kiểm tra nút có tồn tại không
+                const anyChecked = Array.from(ruleCheckboxes).some(cb => cb.checked);
+                deleteSelectedBtn.classList.toggle('hidden', !anyChecked);
+            }
+
+            if(selectAllCheckbox){
+                selectAllCheckbox.addEventListener('change', function() {
+                    ruleCheckboxes.forEach(checkbox => { checkbox.checked = this.checked; });
+                    toggleDeleteButton();
+                });
+            }
+
+
+            ruleCheckboxes.forEach(checkbox => {
+                checkbox.addEventListener('change', function() {
+                    if (!this.checked) {
+                         if(selectAllCheckbox) selectAllCheckbox.checked = false;
+                     }
+                    else {
+                        if(selectAllCheckbox) selectAllCheckbox.checked = Array.from(ruleCheckboxes).every(cb => cb.checked);
+                     }
+                    toggleDeleteButton();
+                });
+            });
+
+            if(deleteSelectedBtn){
+                deleteSelectedBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const checkedIds = Array.from(ruleCheckboxes)
+                                          .filter(cb => cb.checked)
+                                          .map(cb => cb.value);
+
+                    if (checkedIds.length > 0) {
+                        let url = '@Url.Action("DeleteMultipleConfirmation")' + '?' + checkedIds.map(id => 'ruleIds=' + id).join('&');
+                        openModal(url, 'Confirm Multiple Deletion', '30rem'); // Mở modal xác nhận
+                    }
+                });
+            }
+
+
+        });
+    </script>
+}

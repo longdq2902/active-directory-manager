@@ -1,13 +1,13 @@
 ﻿using ADPasswordManager.Constants;
 using ADPasswordManager.Data;
 using ADPasswordManager.Models.Entities;
-using ADPasswordManager.Models.ViewModels; // Thêm using
-using ADPasswordManager.Services;         // Thêm using
+using ADPasswordManager.Models.ViewModels; 
+using ADPasswordManager.Services;         
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering; // Thêm using
+using Microsoft.AspNetCore.Mvc.Rendering; 
 using Microsoft.EntityFrameworkCore;
-using System.Runtime.Versioning;         // Thêm using
+using System.Runtime.Versioning;         
 
 namespace ADPasswordManager.Controllers
 {
@@ -187,18 +187,16 @@ namespace ADPasswordManager.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var rule = await _context.DelegationRules.FindAsync(id);
-            if (rule != null)
+            var mapping = await _context.OuSqlInstanceMappings.FindAsync(id);
+            if (mapping != null)
             {
-                _context.DelegationRules.Remove(rule);
+                _context.OuSqlInstanceMappings.Remove(mapping);
                 await _context.SaveChangesAsync();
-                TempData["SuccessMessage"] = "Rule deleted successfully.";
+                TempData["SuccessMessage"] = "SQL mapping deleted successfully.";
             }
 
-            // Thay vì Redirect, báo cho View biết đã xóa thành công
-            ViewBag.DeleteSuccess = true;
-            // Trả về chính View xác nhận, View này sẽ chứa script để gửi tín hiệu về trang cha
-            return View("Delete", rule);
+            ViewBag.DeleteSuccess = true; // Báo cho View biết đã xóa thành công
+            return View("Delete", mapping); // Trả về View "Delete" (giống SuperAdmin)
         }
         // POST: SuperAdmin/DeleteMultiple
         [HttpPost]

@@ -28,7 +28,8 @@
                                     @if (User.IsInRole(Roles.SuperAdmin))
                                     {
                                         <a asp-controller="SuperAdmin" asp-action="Index" class="text-gray-500 hover:bg-gray-100 px-3 py-2 rounded-md text-sm font-medium">Delegation Management</a>
-                                    }
+                                        <a asp-controller="SqlMapping" asp-action="Index" class="text-gray-500 hover:bg-gray-100 px-3 py-2 rounded-md text-sm font-medium">SQL Mappings</a>
+                                     }
                                 </div>
                             </div>
                         }
@@ -86,6 +87,7 @@
             iconClose.classList.toggle('hidden');
         });
     </script>
+
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>
