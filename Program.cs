@@ -53,7 +53,7 @@ try
     builder.Services.AddScoped<ADPasswordManager.Services.ADAuthenticationService>();
     builder.Services.AddScoped<IPasswordResetService, PasswordResetService>();
     builder.Services.AddHostedService<TokenCleanupService>();
-    //builder.Services.AddScoped<ISqlManagementService, SqlManagementService>();
+    builder.Services.AddScoped<ISqlManagementService, SqlManagementService>();
     builder.Services.AddScoped<ADPasswordManager.Services.ADManagementService>();
 
     var app = builder.Build();

@@ -9,5 +9,8 @@
         public bool IsPasswordChangeRequired { get; set; }
         public DateTime? PasswordExpirationDate { get; set; }
         public bool IsEnabled { get; set; }
+        public string? MappedSqlInstance { get; set; }
+        public bool HasSqlAccess { get; set; } = false;
+        public bool IsSqlMappingAvailable { get; set; } = false;
     }
 }

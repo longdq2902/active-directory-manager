@@ -1,4 +1,5 @@
 ﻿using ADPasswordManager.Constants;
+using ADPasswordManager.Data;
 using ADPasswordManager.Models.ViewModels;
 using ADPasswordManager.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -8,6 +9,10 @@ using Microsoft.EntityFrameworkCore;
 using System.DirectoryServices;
 using System.DirectoryServices.AccountManagement;
 using System.Runtime.Versioning;
+using Microsoft.Extensions.Configuration; 
+using System.Collections.Generic; 
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace ADPasswordManager.Controllers
 {
@@ -18,12 +23,20 @@ namespace ADPasswordManager.Controllers
         private readonly ILogger<ManagementController> _logger;
         private readonly ADManagementService _adManagementService;
         private readonly IPasswordResetService _passwordResetService;
+        private readonly ApplicationDbContext _context;
+        private readonly ISqlManagementService _sqlService;
+        private readonly IConfiguration _configuration;
 
-        public ManagementController(ILogger<ManagementController> logger, ADManagementService adManagementService, IPasswordResetService passwordResetService)
+        public ManagementController(ILogger<ManagementController> logger, ADManagementService adManagementService, 
+            IPasswordResetService passwordResetService, ApplicationDbContext context,
+            ISqlManagementService sqlService, IConfiguration configuration)
         {
             _logger = logger;
             _adManagementService = adManagementService;
             _passwordResetService = passwordResetService;
+            _context = context;
+            _sqlService = sqlService;
+            _configuration = configuration;
         }
 
     public async Task<IActionResult> Index(string? selectedOU, string? searchTerm)
@@ -34,24 +47,65 @@ namespace ADPasswordManager.Controllers
                 return Challenge(); // Hoặc redirect tới trang login
             }
 
-            // GỌI HÀM MỚI: Lấy OUs thay vì Groups
-            // (Đây là hàm chúng ta đã sửa ở Services/ADManagementService.cs)
+            
             var managedOUs = _adManagementService.GetManagedOUNamesForAdmin(adminUsername);
+
+            //tim sql mapping
+            string? mappedSqlInstance = null;
+            string? sqlConnectionString = null; // Biến giữ chuỗi kết nối
+
+            if (!string.IsNullOrEmpty(selectedOU))
+            {
+                var mapping = await _context.OuSqlInstanceMappings
+                                            .FirstOrDefaultAsync(m => m.OuDistinguishedName == selectedOU);
+                if (mapping != null)
+                {
+                    mappedSqlInstance = mapping.SqlInstanceName;
+                    // Build connection string để kiểm tra
+                    sqlConnectionString = BuildSqlConnectionString(mappedSqlInstance);
+                }
+            }
+
 
             // GỌI HÀM MỚI: Truyền selectedOU thay vì selectedGroup
             // (Đây là hàm chúng ta đã sửa ở Services/ADManagementService.cs)
             var users = _adManagementService.GetManagedUsersForAdmin(adminUsername, selectedOU, searchTerm);
 
             // Map UserPrincipal sang UserViewModel (giữ nguyên)
-            var userViewModels = users.Select(user => new UserViewModel
+            var userViewModels = new List<UserViewModel>();
+
+            //var userViewModels = users.Select(user => new UserViewModel
+            //{
+            //    Username = user.SamAccountName,
+            //    DisplayName = user.DisplayName,
+            //    EmailAddress = user.EmailAddress,
+            //    IsPasswordNeverExpires = user.PasswordNeverExpires,
+            //    IsPasswordChangeRequired = (user.LastPasswordSet == null),
+            //    IsEnabled = user.Enabled ?? false,
+            //    MappedSqlInstance = mappedSqlInstance
+            //}).ToList();
+            foreach (var user in users)
             {
-                Username = user.SamAccountName,
-                DisplayName = user.DisplayName,
-                EmailAddress = user.EmailAddress,
-                IsPasswordNeverExpires = user.PasswordNeverExpires,
-                IsPasswordChangeRequired = (user.LastPasswordSet == null),
-                IsEnabled = user.Enabled ?? false
-            }).ToList();
+                bool hasSqlAccess = false;
+                // Chỉ kiểm tra SQL nếu OU đã được map VÀ connection string build thành công
+                if (sqlConnectionString != null && user.SamAccountName != null)
+                {
+                    hasSqlAccess = await _sqlService.CheckAccessAsync(user.SamAccountName, sqlConnectionString);
+                }
+
+                userViewModels.Add(new UserViewModel
+                {
+                    Username = user.SamAccountName,
+                    DisplayName = user.DisplayName,
+                    EmailAddress = user.EmailAddress,
+                    IsPasswordNeverExpires = user.PasswordNeverExpires,
+                    IsPasswordChangeRequired = (user.LastPasswordSet == null),
+                    IsEnabled = user.Enabled ?? false,
+                    MappedSqlInstance = mappedSqlInstance,
+                    IsSqlMappingAvailable = (mappedSqlInstance != null),
+                    HasSqlAccess = hasSqlAccess
+                });
+            }
 
             // THÊM MỚI: Hàm helper để tạo tên hiển thị "thân thiện" cho OU
             Func<string, string> formatOUName = (dn) =>
@@ -340,6 +394,99 @@ namespace ADPasswordManager.Controllers
             ViewBag.IsEnabled = isEnabled;
 
             return View(); // Sẽ trả về Views/Management/ToggleStatusConfirmation.cshtml
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        
+        public async Task<IActionResult> ToggleSqlAccess(string username, string ou)
+        {
+            if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(ou))
+            {
+                TempData["ErrorMessage"] = "An error occurred: Username or OU was missing.";
+                return View("ReloadParent"); // Dùng lại view ReloadParent
+            }
+
+            try
+            {
+                // 1. Tìm mapping và build connection string
+                var mapping = await _context.OuSqlInstanceMappings.FirstOrDefaultAsync(m => m.OuDistinguishedName == ou);
+                if (mapping == null)
+                {
+                    throw new Exception($"No SQL instance is mapped to OU: {ou}");
+                }
+
+                var connectionString = BuildSqlConnectionString(mapping.SqlInstanceName);
+                if (connectionString == null)
+                {
+                    throw new Exception("SQL Delegation admin credentials are not configured in appsettings.");
+                }
+
+                // 2. Kiểm tra trạng thái hiện tại
+                bool currentAccess = await _sqlService.CheckAccessAsync(username, connectionString);
+
+                // 3. Đảo ngược trạng thái
+                if (currentAccess)
+                {
+                    // Đang có -> Thu hồi
+                    await _sqlService.RevokeSqlAccessAsync(username, connectionString);
+                    TempData["SuccessMessage"] = $"SQL access for '{username}' has been successfully REVOKED.";
+                }
+                else
+                {
+                    // Đang không có -> Cấp
+                    await _sqlService.GrantSqlAccessAsync(username, connectionString);
+                    TempData["SuccessMessage"] = $"SQL access for '{username}' has been successfully GRANTED.";
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Failed to toggle SQL access for '{username}'.");
+                TempData["ErrorMessage"] = "An error occurred: " + ex.Message;
+            }
+
+            // 4. Luôn trả về View "ReloadParent" (y hệt ToggleAccountStatus)
+            return View("ReloadParent");
+        }
+
+
+        [HttpGet]
+        public IActionResult ToggleSqlAccessConfirmation(string username, string ou, bool hasSqlAccess)
+        {
+            if (string.IsNullOrWhiteSpace(username))
+            {
+                return View("Error"); // Hoặc một view lỗi chung
+            }
+
+            // Truyền 2 giá trị này sang View
+            ViewBag.Username = username;
+            ViewBag.Ou = ou;
+            ViewBag.HasSqlAccess = hasSqlAccess;
+
+            return View(); // Sẽ trả về Views/Management/ToggleStatusConfirmation.cshtml
+        }
+
+        // Hàm Helper để build Connection String
+        private string? BuildSqlConnectionString(string? instanceName)
+        {
+            if (string.IsNullOrEmpty(instanceName))
+                return null;
+
+            // Lấy thông tin đăng nhập SQL Admin từ config
+            var sqlUser = _configuration["SqlDelegationSettings:AdminUser"];
+            var sqlPass = _configuration["SqlDelegationSettings:AdminPassword"];
+            var sqlDb = _configuration["SqlDelegationSettings:Database"];
+
+            if (string.IsNullOrEmpty(sqlUser) || string.IsNullOrEmpty(sqlPass) || string.IsNullOrEmpty(sqlDb))
+            {
+                _logger.LogError("SqlDelegationSettings (AdminUser, AdminPassword, or Database) is not configured.");
+                return null;
+            }
+
+            // Dùng User Id/Password, TrustServerCertificate=True để tránh lỗi SSL
+            string conStr = $"Server={instanceName};Database={sqlDb};User Id={sqlUser};Password={sqlPass};TrustServerCertificate=True;";
+            _logger.LogWarning("conStr:" + conStr);
+            return conStr;
         }
 
         // code thêm vào trước chỗ này

@@ -1,10 +1,11 @@
-﻿﻿@{
-Layout = null; // Trang này chạy trong iframe
-string username = ViewBag.Username as string;
-bool isEnabled = ViewBag.IsEnabled; // Đây là trạng thái GỐC (trước khi gạt)
-string actionText = isEnabled ? "DISABLE" : "ENABLE";
-// Đặt màu cho nút "Confirm"
-string actionColor = isEnabled ? "bg-red-600 hover:bg-red-700" : "bg-green-600 hover:bg-green-700";
+﻿@{
+    Layout = null; // Trang này chạy trong iframe
+    string username = ViewBag.Username ;
+    string ou = ViewBag.Ou;
+    bool hasSqlAccess = ViewBag.hasSqlAccess; // Đây là trạng thái GỐC (trước khi gạt)
+    string actionText = hasSqlAccess ? "REVOKE" : "GRANT";
+    // Đặt màu cho nút "Confirm"
+    string actionColor = hasSqlAccess ? "bg-red-600 hover:bg-red-700" : "bg-green-600 hover:bg-green-700";
 }
 <!DOCTYPE html>
 <html lang="en">
@@ -22,7 +23,7 @@ string actionColor = isEnabled ? "bg-red-600 hover:bg-red-700" : "bg-green-600 h
     <div class="text-center">
         <h2 class="text-xl font-bold text-gray-900">Are you sure?</h2>
         <p class="mt-2 text-sm text-gray-600">
-            You are about to <strong>@actionText</strong> the account for:
+            You are about to <strong>@actionText</strong> SQL Access to account:
         </p>
         <p class="mt-1 text-lg font-medium text-gray-900">@username</p>
     </div>
@@ -36,7 +37,8 @@ string actionColor = isEnabled ? "bg-red-600 hover:bg-red-700" : "bg-green-600 h
 
     <form asp-action="ToggleAccountStatus" method="post" class="mt-6">
         @Html.AntiForgeryToken()
-        <input type="hidden" name="username" value="@username" />
+        <input type="text" name="username" value="@username" />
+        <input type="text" name="ou" value="@ou" />
 
         <div class="flex justify-center space-x-4">
             <button type"button" id="cancelButton"
@@ -51,6 +53,7 @@ string actionColor = isEnabled ? "bg-red-600 hover:bg-red-700" : "bg-green-600 h
     </form>
 
     <script>
+       
         // Gửi tin nhắn 'closeUserModal' về trang cha (Index.cshtml) khi nhấn Cancel
         document.getElementById('cancelButton').addEventListener('click', function() {
             window.parent.postMessage('closeUserModal', '*');

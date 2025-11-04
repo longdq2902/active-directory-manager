@@ -1,664 +1,799 @@
 ﻿@inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Antiforgery
 @model ADPasswordManager.Models.ViewModels.UserManagementViewModel
 @{
-    ViewData["Title"] = "User Management";
+	ViewData["Title"] = "User Management";
 }
 <input type="hidden" id="RequestVerificationToken" name="__RequestVerificationToken" value="@Antiforgery.GetAndStoreTokens(Context).RequestToken" />
 
 <div id="reset-password-modal"
-     class="fixed inset-0 z-50 hidden"
-     role="dialog" aria-modal="true" aria-labelledby="reset-title" tabindex="-1">
-    <div class="absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity"></div>
-    <div class="relative h-full w-full flex items-center justify-center p-4">
-        <div data-panel
-             class="w-full max-w-2xl  border border-gray-200   bg-gray-200 rounded-2xl shadow-2xl ring-1 ring-black/5 overflow-hidden transform transition duration-150 ease-out ">
-            <div class="flex items-center justify-between px-5 py-4 border-b">
-                <div class="flex items-center gap-3">
-                    <div class="h-9 w-9 inline-flex items-center justify-center rounded-xl bg-indigo-50">
-                        <svg class="h-5 w-5 text-indigo-600" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                  d="M12 11c.667-1.333 2-4 2-5a2 2 0 10-4 0c0 1 1.333 3.667 2 5zM6 21h12l-6-6-6 6z" />
-                        </svg>
-                    </div>
-                    <h3 id="reset-title" class="text-lg sm:text-xl font-semibold text-gray-900">
-                        Reset Password: <span id="modal-username" class="text-indigo-600 font-bold"></span>
-                    </h3>
-                </div>
-                <button id="close-modal-btn" type="button"
-                        class="inline-flex items-center justify-center rounded-xl p-2 text-gray-500 hover:text-gray-900 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        aria-label="Close">
-                    <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                        <path fill-rule="evenodd"
-                              d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-                              clip-rule="evenodd" />
-                    </svg>
-                </button>
-            </div>
-            <div class="p-0">
-                <iframe id="reset-password-iframe" src="about:blank"
-                        class="block w-full h-96 sm:h-[32rem]" frameborder="1"></iframe>
-            </div>
-        </div>
-    </div>
+	 class="fixed inset-0 z-50 hidden"
+	 role="dialog" aria-modal="true" aria-labelledby="reset-title" tabindex="-1">
+	<div class="absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity"></div>
+	<div class="relative h-full w-full flex items-center justify-center p-4">
+		<div data-panel
+			 class="w-full max-w-2xl  border border-gray-200   bg-gray-200 rounded-2xl shadow-2xl ring-1 ring-black/5 overflow-hidden transform transition duration-150 ease-out ">
+			<div class="flex items-center justify-between px-5 py-4 border-b">
+				<div class="flex items-center gap-3">
+					<div class="h-9 w-9 inline-flex items-center justify-center rounded-xl bg-indigo-50">
+						<svg class="h-5 w-5 text-indigo-600" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+								  d="M12 11c.667-1.333 2-4 2-5a2 2 0 10-4 0c0 1 1.333 3.667 2 5zM6 21h12l-6-6-6 6z" />
+						</svg>
+					</div>
+					<h3 id="reset-title" class="text-lg sm:text-xl font-semibold text-gray-900">
+						Reset Password: <span id="modal-username" class="text-indigo-600 font-bold"></span>
+					</h3>
+				</div>
+				<button id="close-modal-btn" type="button"
+						class="inline-flex items-center justify-center rounded-xl p-2 text-gray-500 hover:text-gray-900 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+						aria-label="Close">
+					<svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+						<path fill-rule="evenodd"
+							  d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+							  clip-rule="evenodd" />
+					</svg>
+				</button>
+			</div>
+			<div class="p-0">
+				<iframe id="reset-password-iframe" src="about:blank"
+						class="block w-full h-96 sm:h-[32rem]" frameborder="1"></iframe>
+			</div>
+		</div>
+	</div>
 </div>
 
 <div id="create-user-modal"
-     class="fixed inset-0 z-50 hidden"
-     role="dialog" aria-modal="true" aria-labelledby="create-user-title" tabindex="-1">
-    <div class="absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity"></div>
-    <div class="relative h-full w-full flex items-center justify-center p-4">
-        <div data-panel
-             class="w-full max-w-7xl  border border-gray-200   bg-gray-200 rounded-2xl shadow-2xl ring-1 ring-black/5 overflow-hidden transform transition duration-150 ease-out">
-            <div class="flex items-center justify-between px-5 py-4 border-b">
-                <div class="flex items-center gap-3">
-                    <div class="h-9 w-9 inline-flex items-center justify-center rounded-xl bg-indigo-50">
-                        <svg class="h-5 w-5 text-indigo-600" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                  d="M12 4v16m8-8H4" />
-                        </svg>
-                    </div>
-                    <h3 id="create-user-title" class="text-lg sm:text-xl font-semibold text-gray-900">
-                        New User
-                    </h3>
-                </div>
-                <button id="close-modal-create-btn" type="button"
-                        class="inline-flex items-center justify-center rounded-xl p-2 text-gray-500 hover:text-gray-900 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        aria-label="Close">
-                    <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                        <path fill-rule="evenodd"
-                              d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-                              clip-rule="evenodd" />
-                    </svg>
-                </button>
-            </div>
-            <div class="p-0">
-                <iframe id="create-user-iframe" src="about:blank"
-                        class="block w-full h-96 sm:h-[32rem]" frameborder="1"></iframe>
-            </div>
-        </div>
-    </div>
+	 class="fixed inset-0 z-50 hidden"
+	 role="dialog" aria-modal="true" aria-labelledby="create-user-title" tabindex="-1">
+	<div class="absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity"></div>
+	<div class="relative h-full w-full flex items-center justify-center p-4">
+		<div data-panel
+			 class="w-full max-w-7xl  border border-gray-200   bg-gray-200 rounded-2xl shadow-2xl ring-1 ring-black/5 overflow-hidden transform transition duration-150 ease-out">
+			<div class="flex items-center justify-between px-5 py-4 border-b">
+				<div class="flex items-center gap-3">
+					<div class="h-9 w-9 inline-flex items-center justify-center rounded-xl bg-indigo-50">
+						<svg class="h-5 w-5 text-indigo-600" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+								  d="M12 4v16m8-8H4" />
+						</svg>
+					</div>
+					<h3 id="create-user-title" class="text-lg sm:text-xl font-semibold text-gray-900">
+						New User
+					</h3>
+				</div>
+				<button id="close-modal-create-btn" type="button"
+						class="inline-flex items-center justify-center rounded-xl p-2 text-gray-500 hover:text-gray-900 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+						aria-label="Close">
+					<svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+						<path fill-rule="evenodd"
+							  d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+							  clip-rule="evenodd" />
+					</svg>
+				</button>
+			</div>
+			<div class="p-0">
+				<iframe id="create-user-iframe" src="about:blank"
+						class="block w-full h-96 sm:h-[32rem]" frameborder="1"></iframe>
+			</div>
+		</div>
+	</div>
 </div>
 
 <div id="delete-confirm-modal"
-     class="fixed inset-0 z-50 hidden"
-     role="dialog" aria-modal="true" aria-labelledby="delete-title" tabindex="-1">
-    <div class="absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity"></div>
-    <div class="relative h-full w-full flex items-center justify-center p-4">
-        <div data-panel
-             class="w-full max-w-xl  border border-gray-200   bg-gray-200 rounded-2xl shadow-2xl ring-1 ring-black/5 overflow-hidden transform transition duration-150 ease-out ">
-            <div class="flex items-center justify-between px-5 py-4 border-b">
-                <div class="flex items-center gap-3">
-                    <div class="h-9 w-9 inline-flex items-center justify-center rounded-xl bg-red-50">
-                        <svg class="h-5 w-5 text-red-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126z" />
-                        </svg>
-                    </div>
-                    <h3 id="delete-title" class="text-lg sm:text-xl font-semibold text-gray-900">
-                        Confirm Deletion
-                    </h3>
-                </div>
-                <button id="close-modal-delete-btn" type="button"
-                        class="inline-flex items-center justify-center rounded-xl p-2 text-gray-500 hover:text-gray-900 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        aria-label="Close">
-                    <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                        <path fill-rule="evenodd"
-                              d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-                              clip-rule="evenodd" />
-                    </svg>
-                </button>
-            </div>
-            <div class="p-0">
-                <iframe id="delete-confirm-iframe" src="about:blank"
-                        class="block w-full max-h-60 sm:h-[32rem]" frameborder="1"></iframe>
-            </div>
-        </div>
-    </div>
+	 class="fixed inset-0 z-50 hidden"
+	 role="dialog" aria-modal="true" aria-labelledby="delete-title" tabindex="-1">
+	<div class="absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity"></div>
+	<div class="relative h-full w-full flex items-center justify-center p-4">
+		<div data-panel
+			 class="w-full max-w-xl  border border-gray-200   bg-gray-200 rounded-2xl shadow-2xl ring-1 ring-black/5 overflow-hidden transform transition duration-150 ease-out ">
+			<div class="flex items-center justify-between px-5 py-4 border-b">
+				<div class="flex items-center gap-3">
+					<div class="h-9 w-9 inline-flex items-center justify-center rounded-xl bg-red-50">
+						<svg class="h-5 w-5 text-red-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+							<path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126z" />
+						</svg>
+					</div>
+					<h3 id="delete-title" class="text-lg sm:text-xl font-semibold text-gray-900">
+						Confirm Deletion
+					</h3>
+				</div>
+				<button id="close-modal-delete-btn" type="button"
+						class="inline-flex items-center justify-center rounded-xl p-2 text-gray-500 hover:text-gray-900 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+						aria-label="Close">
+					<svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+						<path fill-rule="evenodd"
+							  d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+							  clip-rule="evenodd" />
+					</svg>
+				</button>
+			</div>
+			<div class="p-0">
+				<iframe id="delete-confirm-iframe" src="about:blank"
+						class="block w-full max-h-60 sm:h-[32rem]" frameborder="1"></iframe>
+			</div>
+		</div>
+	</div>
 </div>
 </div>
 </div>
 
 <div id="toggle-status-confirm-modal"
-     class="fixed inset-0 z-50 hidden"
-     role="dialog" aria-modal="true" aria-labelledby="toggle-title" tabindex="-1">
-    <div class="absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity"></div>
-    <div class="relative h-full w-full flex items-center justify-center p-4">
-        <div data-panel
-             class="w-full max-w-xl border border-gray-200 bg-gray-200 rounded-2xl shadow-2xl ring-1 ring-black/5 overflow-hidden transform transition duration-150 ease-out ">
-            <div class="flex items-center justify-between px-5 py-4 border-b">
-                <div class="flex items-center gap-3">
-                    <div class="h-9 w-9 inline-flex items-center justify-center rounded-xl bg-yellow-50">
-                        <svg class="h-5 w-5 text-yellow-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126z" />
-                        </svg>
-                    </div>
-                    <h3 id="toggle-title" class="text-lg sm:text-xl font-semibold text-gray-900">
-                        Confirm Status Change
-                    </h3>
-                </div>
-                <button id="close-modal-toggle-btn" type="button"
-                        class="inline-flex items-center justify-center rounded-xl p-2 text-gray-500 hover:text-gray-900 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        aria-label="Close">
-                    <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                        <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
-                    </svg>
-                </button>
-            </div>
-            <div class="p-0">
-                <iframe id="toggle-status-confirm-iframe" src="about:blank"
-                        class="block w-full" style="height: 350px;" frameborder="0"></iframe>
-            </div>
-        </div>
-    </div>
+	 class="fixed inset-0 z-50 hidden"
+	 role="dialog" aria-modal="true" aria-labelledby="toggle-title" tabindex="-1">
+	<div class="absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity"></div>
+	<div class="relative h-full w-full flex items-center justify-center p-4">
+		<div data-panel
+			 class="w-full max-w-xl border border-gray-200 bg-gray-200 rounded-2xl shadow-2xl ring-1 ring-black/5 overflow-hidden transform transition duration-150 ease-out ">
+			<div class="flex items-center justify-between px-5 py-4 border-b">
+				<div class="flex items-center gap-3">
+					<div class="h-9 w-9 inline-flex items-center justify-center rounded-xl bg-yellow-50">
+						<svg class="h-5 w-5 text-yellow-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+							<path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126z" />
+						</svg>
+					</div>
+					<h3 id="toggle-title" class="text-lg sm:text-xl font-semibold text-gray-900">
+						Confirm Status Change
+					</h3>
+				</div>
+				<button id="close-modal-toggle-btn" type="button"
+						class="inline-flex items-center justify-center rounded-xl p-2 text-gray-500 hover:text-gray-900 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+						aria-label="Close">
+					<svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+						<path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+					</svg>
+				</button>
+			</div>
+			<div class="p-0">
+				<iframe id="toggle-status-confirm-iframe" src="about:blank"
+						class="block w-full" style="height: 350px;" frameborder="0"></iframe>
+			</div>
+		</div>
+	</div>
+</div>
+
+<div id="toggle-sql-confirm-modal"
+	 class="fixed inset-0 z-50 hidden"
+	 role="dialog" aria-modal="true" aria-labelledby="toggle-title" tabindex="-1">
+	<div class="absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity"></div>
+	<div class="relative h-full w-full flex items-center justify-center p-4">
+		<div data-panel
+			 class="w-full max-w-xl border border-gray-200 bg-gray-200 rounded-2xl shadow-2xl ring-1 ring-black/5 overflow-hidden transform transition duration-150 ease-out ">
+			<div class="flex items-center justify-between px-5 py-4 border-b">
+				<div class="flex items-center gap-3">
+					<div class="h-9 w-9 inline-flex items-center justify-center rounded-xl bg-yellow-50">
+						<svg class="h-5 w-5 text-yellow-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+							<path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126z" />
+						</svg>
+					</div>
+					<h3 id="toggle-title" class="text-lg sm:text-xl font-semibold text-gray-900">
+						Confirm Sql Accesss Change
+					</h3>
+				</div>
+				<button id="close-modal-toggle-sql-btn" type="button"
+						class="inline-flex items-center justify-center rounded-xl p-2 text-gray-500 hover:text-gray-900 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+						aria-label="Close">
+					<svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+						<path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+					</svg>
+				</button>
+			</div>
+			<div class="p-0">
+				<iframe id="toggle-sql-confirm-iframe" src="about:blank"
+						class="block w-full" style="height: 350px;" frameborder="0"></iframe>
+			</div>
+		</div>
+	</div>
 </div>
 
 <div class="h-full">
-    <div class="flex flex-col md:flex-row h-full gap-4">
+	<div class="flex flex-col md:flex-row h-full gap-4">
 
-        <div class="w-full md:w-2/12 flex flex-col">
-            <div class="bg-white shadow-md rounded-lg p-4 flex-1 overflow-y-auto">
-                <h2 class="text-lg font-semibold mb-4 text-gray-800 border-b pb-2">Managed OUs</h2> <ul id="ou-list">
-                    <li class="mb-2">
-                        <a asp-action="Index"
-                           asp-route-selectedOU="" asp-route-searchTerm="@Model.SearchTerm"
-                           class="filter-link block px-3 py-2 rounded-md text-gray-700 @(string.IsNullOrEmpty(Model.SelectedOU) ? "bg-indigo-100 font-semibold" : "hover:bg-gray-100")">
-                            All Users
-                        </a>
-                    </li>
-                    @if (Model.AvailableOUs != null)
-                    {
-                        @foreach (var ou in Model.AvailableOUs)
-                        {
-                            <li class="mb-2">
-                                <a asp-action="Index" asp-route-selectedOU="@ou.Value" asp-route-searchTerm="@Model.SearchTerm"
-                                   class="filter-link block px-3 py-2 rounded-md text-gray-600 @(Model.SelectedOU == ou.Value ? "bg-indigo-100 font-semibold" : "hover:bg-gray-100")"> @ou.Text </a>
-                            </li>
-                        }
-                    }
-                </ul>
-            </div>
-        </div>
-        <div class="w-full md:w-10/12 flex flex-col h-full">
+		<div class="w-full md:w-2/12 flex flex-col">
+			<div class="bg-white shadow-md rounded-lg p-4 flex-1 overflow-y-auto">
+				<h2 class="text-lg font-semibold mb-4 text-gray-800 border-b pb-2">Managed OUs</h2> <ul id="ou-list">
+					<li class="mb-2">
+						<a asp-action="Index"
+						   asp-route-selectedOU="" asp-route-searchTerm="@Model.SearchTerm"
+						   class="filter-link block px-3 py-2 rounded-md text-gray-700 @(string.IsNullOrEmpty(Model.SelectedOU) ? "bg-indigo-100 font-semibold" : "hover:bg-gray-100")">
+							All Users
+						</a>
+					</li>
+					@if (Model.AvailableOUs != null)
+					{
+						@foreach (var ou in Model.AvailableOUs)
+						{
+							<li class="mb-2">
+								<a asp-action="Index" asp-route-selectedOU="@ou.Value" asp-route-searchTerm="@Model.SearchTerm"
+								   class="filter-link block px-3 py-2 rounded-md text-gray-600 @(Model.SelectedOU == ou.Value ? "bg-indigo-100 font-semibold" : "hover:bg-gray-100")"> @ou.Text </a>
+							</li>
+						}
+					}
+				</ul>
+			</div>
+		</div>
+		<div class="w-full md:w-10/12 flex flex-col h-full">
 
-            <div class="flex justify-between items-center mb-6">
-                <h1 class="text-3xl font-bold text-gray-800">@ViewData["Title"]</h1>
-                <div>
-                    <button id="delete-selected-btn"
-                            class="hidden inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700">
-                        Delete User
-                    </button>
-                    <button id="add-user-btn"
-                            class="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700">
-                        Create User
-                    </button>
-                </div>
-            </div>
+			<div class="flex justify-between items-center mb-6">
+				<h1 class="text-3xl font-bold text-gray-800">@ViewData["Title"]</h1>
+				<div>
+					<button id="delete-selected-btn"
+							class="hidden inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700">
+						Delete User
+					</button>
+					<button id="add-user-btn"
+							class="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700">
+						Create User
+					</button>
+				</div>
+			</div>
 
-            <div class="mb-4">
-                <form id="search-form" asp-action="Index" method="get" class="bg-white shadow-md rounded-lg p-4 flex items-center">
-                    <input type="hidden" name="selectedOU" value="@Model.SelectedOU" /> <input  name="searchTerm" value="@Model.SearchTerm" placeholder="  Search by username or display name..."
-                                                                                               class="w-full bg-transparent placeholder:text-slate-400 text-slate-700 text-sm border border-slate-200 rounded-md pl-3 pr-28 py-2 transition duration-300 ease focus:outline-none focus:border-slate-400 hover:border-slate-300 shadow-sm focus:shadow" />
-                    <button type="submit" class="ml-4 px-4 py-2 bg-indigo-600 text-white font-semibold rounded-md hover:bg-indigo-700">
-                        Search
-                    </button>
-                    <a asp-action="Index" asp-route-selectedOU="@Model.SelectedOU" class="filter-link ml-2 px-4 py-2 bg-gray-200 text-gray-700 font-semibold rounded-md hover:bg-gray-300">
-                        Clear
-                    </a>
+			<div class="mb-4">
+				<form id="search-form" asp-action="Index" method="get" class="bg-white shadow-md rounded-lg p-4 flex items-center">
+					<input type="hidden" name="selectedOU" value="@Model.SelectedOU" /> <input name="searchTerm" value="@Model.SearchTerm" placeholder="  Search by username or display name..."
+																						  class="w-full bg-transparent placeholder:text-slate-400 text-slate-700 text-sm border border-slate-200 rounded-md pl-3 pr-28 py-2 transition duration-300 ease focus:outline-none focus:border-slate-400 hover:border-slate-300 shadow-sm focus:shadow" />
+					<button type="submit" class="ml-4 px-4 py-2 bg-indigo-600 text-white font-semibold rounded-md hover:bg-indigo-700">
+						Search
+					</button>
+					<a asp-action="Index" asp-route-selectedOU="@Model.SelectedOU" class="filter-link ml-2 px-4 py-2 bg-gray-200 text-gray-700 font-semibold rounded-md hover:bg-gray-300">
+						Clear
+					</a>
 
-                    <div id="loading-spinner" class="hidden ml-4">
-                        <svg class="animate-spin h-5 w-5 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                    </div>
-                </form>
-            </div>
+					<div id="loading-spinner" class="hidden ml-4">
+						<svg class="animate-spin h-5 w-5 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+							<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+							<path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+						</svg>
+					</div>
+				</form>
+			</div>
 
-            @if (TempData["SuccessMessage"] != null)
-            {
-                <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4" role="alert">
-                    <span class="block sm:inline">@TempData["SuccessMessage"]</span>
-                </div>
-            }
+			@if (TempData["SuccessMessage"] != null)
+			{
+				<div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4" role="alert">
+					<span class="block sm:inline">@TempData["SuccessMessage"]</span>
+				</div>
+			}
 
-            <div class="bg-white shadow-md rounded-lg overflow-x-auto flex-1 overflow-y-auto">
-                <table class="min-w-full leading-normal">
-                    <thead>
-                        <tr class="sticky top-0 border-b-2 border-gray-200 bg-gray-50 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                            <th class="px-5 py-3">
-                                <input type="checkbox" id="select-all-checkbox" class="form-checkbox h-4 w-4 text-indigo-600 transition duration-150 ease-in-out" />
-                            </th>
-                            <th class="px-5 py-3">Username</th>
-                            <th class="px-5 py-3">Display Name</th>
-                            <th class="px-5 py-3">Email</th>
-                            <th class="px-5 py-3 text-center">Never Expires</th>
-                            <th class="px-5 py-3 text-center">Change At Logon</th>
-                            <th class="px-5 py-3 text-center">Status</th>
-                            <th class="px-5 py-3">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var user in Model.Users)
-                        {
-                            <tr class="border-b border-gray-200 hover:bg-gray-100">
-                                <td class="px-5 py-4 text-sm">
-                                    <input type="checkbox" class="user-checkbox form-checkbox h-4 w-4 text-indigo-600 transition duration-150 ease-in-out" value="@user.Username" />
-                                </td>
-                                <td class="px-5 py-4 text-sm"><p class="text-gray-900 whitespace-no-wrap">@user.Username</p></td>
-                                <td class="px-5 py-4 text-sm"><p class="text-gray-900 whitespace-no-wrap">@user.DisplayName</p></td>
-                                <td class="px-5 py-4 text-sm"><p class="text-gray-900 whitespace-no-wrap">@user.EmailAddress</p></td>
-                                <td class="px-5 py-4 text-sm text-center">
-                                    @if (user.IsPasswordNeverExpires)
-                                    {
-                                        <svg class="w-6 h-6 text-green-500 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                                    }
-                                </td>
-                                <td class="px-5 py-4 text-sm text-center">
-                                    @if (user.IsPasswordChangeRequired)
-                                    {
-                                        <svg class="w-6 h-6 text-green-500 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                                    }
-                                </td>
+			<div class="bg-white shadow-md rounded-lg overflow-x-auto flex-1 overflow-y-auto">
+				<table class="min-w-full leading-normal">
+					<thead>
+						<tr class="sticky top-0 border-b-2 border-gray-200 bg-gray-50 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+							<th class="px-5 py-3">
+								<input type="checkbox" id="select-all-checkbox" class="form-checkbox h-4 w-4 text-indigo-600 transition duration-150 ease-in-out" />
+							</th>
+							<th class="px-5 py-3">Username</th>
+							<th class="px-5 py-3">Display Name</th>
+							<th class="px-5 py-3">Email</th>
+							<th class="px-5 py-3 text-center">Never Expires</th>
+							<th class="px-5 py-3 text-center">Change At Logon</th>
+							<th class="px-5 py-3 text-center">Status</th>
+							@* <th class="px-5 py-3 ">SQL Instance</th> *@
+							<th class="px-5 py-3 text-center">SQL Access </th>
+							<th class="px-5 py-3">Actions</th>
+						</tr>
+					</thead>
+					<tbody>
+						@foreach (var user in Model.Users)
+						{
+							<tr class="border-b border-gray-200 hover:bg-gray-100">
+								<td class="px-5 py-4 text-sm">
+									<input type="checkbox" class="user-checkbox form-checkbox h-4 w-4 text-indigo-600 transition duration-150 ease-in-out" value="@user.Username" />
+								</td>
+								<td class="px-5 py-4 text-sm"><p class="text-gray-900 whitespace-no-wrap">@user.Username</p></td>
+								<td class="px-5 py-4 text-sm"><p class="text-gray-900 whitespace-no-wrap">@user.DisplayName</p></td>
+								<td class="px-5 py-4 text-sm"><p class="text-gray-900 whitespace-no-wrap">@user.EmailAddress</p></td>
+								<td class="px-5 py-4 text-sm text-center">
+									@if (user.IsPasswordNeverExpires)
+									{
+										<svg class="w-6 h-6 text-green-500 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+									}
+								</td>
+								<td class="px-5 py-4 text-sm text-center">
+									@if (user.IsPasswordChangeRequired)
+									{
+										<svg class="w-6 h-6 text-green-500 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+									}
+								</td>
 
-                               <td class="px-5 py-4 text-sm">
-                                <label for="toggle-input-@user.Username" class="relative inline-flex items-center cursor-pointer">
-                                    <input type="checkbox" 
-                                           value="" 
-                                           id="toggle-input-@user.Username"
-                                           class="sr-only peer toggle-status-input" 
-                                           data-username="@user.Username"
-                                               data-is-enabled="@user.IsEnabled.ToString().ToLowerInvariant()"
-                                           @if (user.IsEnabled) { <text>checked</text> }
-                                    >
-                                    <div class="w-11 h-6 bg-gray-200 rounded-full 
-                                                peer peer-focus:outline-none 
-                                                peer-focus:ring-4 peer-focus:ring-blue-300 
-                                                dark:peer-focus:ring-blue-800 
-                                                peer-checked:after:translate-x-full 
-                                                peer-checked:after:border-white 
-                                                after:content-[''] 
-                                                after:absolute after:top-[2px] after:left-[2px] 
-                                                after:bg-white after:border-gray-300 after:border after:rounded-full 
-                                                after:h-5 after:w-5 
-                                                after:transition-all 
-                                                dark:border-gray-600 
-                                                peer-checked:bg-green-600">
-                                    </div>
-                                    <span id="status-text-@user.Username" class="ml-3 text-sm font-medium text-gray-900">
-                                        @if (user.IsEnabled)
-                                        {
-                                            <text>Enabled</text>
-                                        }
-                                        else
-                                        {
-                                            <text>Disabled</text>
-                                        }
-                                    </span>
-                                </label>
-                        </td>
-                                <td class="px-5 py-4 text-sm">
-                                    <div class="flex items-center space-x-2">
+								<td class="px-5 py-4 text-sm">
+									<label for="toggle-input-@user.Username" class="relative inline-flex items-center cursor-pointer">
+										<input type="checkbox"
+											   value=""
+											   id="toggle-input-@user.Username"
+											   class="sr-only peer toggle-status-input"
+											   data-username="@user.Username"
+											   data-is-enabled="@user.IsEnabled.ToString().ToLowerInvariant()"
+											   @if (user.IsEnabled)
+											{
+												   <text>checked</text>
+											   }
+										>
+										<div class="w-11 h-6 bg-gray-200 rounded-full
+	                                                peer peer-focus:outline-none
+	                                                peer-focus:ring-4 peer-focus:ring-blue-300
+	                                                dark:peer-focus:ring-blue-800
+	                                                peer-checked:after:translate-x-full
+	                                                peer-checked:after:border-white
+	                                                after:content-['']
+	                                                after:absolute after:top-[2px] after:left-[2px]
+	                                                after:bg-white after:border-gray-300 after:border after:rounded-full
+	                                                after:h-5 after:w-5
+	                                                after:transition-all
+	                                                dark:border-gray-600
+	                                                peer-checked:bg-green-600">
+										</div>
+										<span id="status-text-@user.Username" class="ml-3 text-sm font-medium text-gray-900">
+											@if (user.IsEnabled)
+											{
+												<text>Enabled</text>
+											}
+											else
+											{
+												<text>Disabled</text>
+											}
+										</span>
+									</label>
 
-                                        <a href="@Url.Action("ResetPassword", new { username = user.Username })"
-                                           data-username="@user.Username"
-                                           class="reset-password-link inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+								</td>
 
-                                            <svg class="w-4 h-4 mr-1.5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                                                <path fill-rule="evenodd" d="M18 8a6 6 0 01-7.743 5.743L10 14l-1 1-1 1H6v2H2v-4l1-1 1-1 1.257-1.257A6 6 0 1118 8zm-6-4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" />
-                                            </svg>
-                                            Reset Password
-                                        </a>
 
-                                        <a href="#"
-                                           class="send-reset-link inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
-                                           data-username="@user.Username"
-                                           data-email="@user.EmailAddress"
-                                           title="Send password reset link to user's email">
+								<td class="px-5 py-4 text-sm">
+									<label for="toggle-input-sql-@user.Username" class="relative inline-flex items-center cursor-pointer">
+										<input type="checkbox"
+											   value=""
+											   id="toggle-input-sql-@user.Username"
+											   class="sr-only peer toggle-sql-input"
+											   data-username="@user.Username"
+											   data-ou="@user.MappedSqlInstance"
+											   data-is-sql="@user.HasSqlAccess.ToString().ToLowerInvariant()"
+											   @if (user.HasSqlAccess)
+											   {
+											<text>checked</text>
+										}
+										>
+										<div class="w-11 h-6 bg-gray-200 rounded-full
+										peer peer-focus:outline-none
+										peer-focus:ring-4 peer-focus:ring-blue-300
+										dark:peer-focus:ring-blue-800
+										peer-checked:after:translate-x-full
+										peer-checked:after:border-white
+										after:content-['']
+										after:absolute after:top-[2px] after:left-[2px]
+										after:bg-white after:border-gray-300 after:border after:rounded-full
+										after:h-5 after:w-5
+										after:transition-all
+										dark:border-gray-600
+										peer-checked:bg-green-600">
+										</div>
+										<span id="sql-text-@user.Username" class="ml-3 text-sm font-medium text-gray-900">
+											@if (user.HasSqlAccess)
+											{
+												<text>OK</text>
+											}
+											else
+											{
+												<text>Not OK</text>
+											}
+										</span>
+									</label>
 
-                                            <svg class="w-4 h-4 mr-1.5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                                                <path d="M3 4a2 2 0 00-2 2v1.161l8.441 4.221a1.25 1.25 0 001.118 0L19 7.162V6a2 2 0 00-2-2H3z" />
-                                                <path d="M19 8.839l-7.77 3.885a2.75 2.75 0 01-2.46 0L1 8.839V14a2 2 0 002 2h14a2 2 0 002-2V8.839z" />
-                                            </svg>
-                                            Send Link
-                                        </a>
-                                    </div>
-                                </td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
+								</td>
+								<td class="px-5 py-4 text-sm">
+									<div class="flex items-center space-x-2">
+
+										<a href="@Url.Action("ResetPassword", new { username = user.Username })"
+										   data-username="@user.Username"
+										   class="reset-password-link inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+
+											<svg class="w-4 h-4 mr-1.5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+												<path fill-rule="evenodd" d="M18 8a6 6 0 01-7.743 5.743L10 14l-1 1-1 1H6v2H2v-4l1-1 1-1 1.257-1.257A6 6 0 1118 8zm-6-4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" />
+											</svg>
+											Reset Password
+										</a>
+
+										<a href="#"
+										   class="send-reset-link inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+										   data-username="@user.Username"
+										   data-email="@user.EmailAddress"
+										   title="Send password reset link to user's email">
+
+											<svg class="w-4 h-4 mr-1.5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+												<path d="M3 4a2 2 0 00-2 2v1.161l8.441 4.221a1.25 1.25 0 001.118 0L19 7.162V6a2 2 0 00-2-2H3z" />
+												<path d="M19 8.839l-7.77 3.885a2.75 2.75 0 01-2.46 0L1 8.839V14a2 2 0 002 2h14a2 2 0 002-2V8.839z" />
+											</svg>
+											Send Link
+										</a>
+									</div>
+								</td>
+							</tr>
+						}
+					</tbody>
+				</table>
+			</div>
+		</div>
+	</div>
 </div>
 
 @section Scripts {
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            // --- (Spinner logic giữ nguyên) ---
-            const spinner = document.getElementById('loading-spinner');
-            const searchForm = document.getElementById('search-form');
-            if (searchForm) {
-                searchForm.addEventListener('submit', function() {
-                    spinner.classList.remove('hidden');
-                });
-            }
-            const filterLinks = document.querySelectorAll('.filter-link');
-            filterLinks.forEach(function(link) {
-                link.addEventListener('click', function() {
-                    spinner.classList.remove('hidden');
-                });
-            });
+	<script>
+		document.addEventListener('DOMContentLoaded', function () {
+			// --- (Spinner logic giữ nguyên) ---
+			const spinner = document.getElementById('loading-spinner');
+			const searchForm = document.getElementById('search-form');
+			if (searchForm) {
+				searchForm.addEventListener('submit', function() {
+					spinner.classList.remove('hidden');
+				});
+			}
+			const filterLinks = document.querySelectorAll('.filter-link');
+			filterLinks.forEach(function(link) {
+				link.addEventListener('click', function() {
+					spinner.classList.remove('hidden');
+				});
+			});
 
-            // --- 1. RESET PASSWORD MODAL ---
-            const resetModal = document.getElementById('reset-password-modal');
-            const resetIframe = document.getElementById('reset-password-iframe');
-            const closeResetModalBtn = document.getElementById('close-modal-btn');
-            const resetLinks = document.querySelectorAll('.reset-password-link');
-            const modalUsernameSpan = document.getElementById('modal-username');
+			// --- 1. RESET PASSWORD MODAL ---
+			const resetModal = document.getElementById('reset-password-modal');
+			const resetIframe = document.getElementById('reset-password-iframe');
+			const closeResetModalBtn = document.getElementById('close-modal-btn');
+			const resetLinks = document.querySelectorAll('.reset-password-link');
+			const modalUsernameSpan = document.getElementById('modal-username');
 
-            const closeResetModal = () => {
-                resetModal.classList.add('hidden');
-                resetIframe.src = 'about:blank';
-            };
+			const closeResetModal = () => {
+				resetModal.classList.add('hidden');
+				resetIframe.src = 'about:blank';
+			};
 
-            resetLinks.forEach(link => {
-                link.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    const url = this.href;
-                    const username = this.dataset.username;
-                    modalUsernameSpan.textContent = username;
-                    resetIframe.src = url;
-                    resetModal.classList.remove('hidden');
-                });
-            });
+			resetLinks.forEach(link => {
+				link.addEventListener('click', function(e) {
+					e.preventDefault();
+					const url = this.href;
+					const username = this.dataset.username;
+					modalUsernameSpan.textContent = username;
+					resetIframe.src = url;
+					resetModal.classList.remove('hidden');
+				});
+			});
 
-            closeResetModalBtn.addEventListener('click', closeResetModal);
-            resetModal.addEventListener('click', function(e) {
-                if (e.target === resetModal) { // Chỉ đóng khi click vào backdrop
-                    closeResetModal();
-                }
-            });
+			closeResetModalBtn.addEventListener('click', closeResetModal);
+			resetModal.addEventListener('click', function(e) {
+				if (e.target === resetModal) { // Chỉ đóng khi click vào backdrop
+					closeResetModal();
+				}
+			});
 
-            // --- 2. CREATE USER MODAL ---
-            const createUserModal = document.getElementById('create-user-modal');
-            const createUserIframe = document.getElementById('create-user-iframe');
-            const closeCreateUserModalBtn = document.getElementById('close-modal-create-btn');
-            const addUserBtn = document.getElementById('add-user-btn');
+			// --- 2. CREATE USER MODAL ---
+			const createUserModal = document.getElementById('create-user-modal');
+			const createUserIframe = document.getElementById('create-user-iframe');
+			const closeCreateUserModalBtn = document.getElementById('close-modal-create-btn');
+			const addUserBtn = document.getElementById('add-user-btn');
 
-            const openCreateUserModal = (url, height = '40rem') => {
-                createUserIframe.style.height = height;
-                createUserIframe.src = url;
-                createUserModal.classList.remove('hidden');
-            };
+			const openCreateUserModal = (url, height = '40rem') => {
+				createUserIframe.style.height = height;
+				createUserIframe.src = url;
+				createUserModal.classList.remove('hidden');
+			};
 
-            const closeCreateUserModal = () => {
-                createUserModal.classList.add('hidden');
-                createUserIframe.src = 'about:blank';
-            };
+			const closeCreateUserModal = () => {
+				createUserModal.classList.add('hidden');
+				createUserIframe.src = 'about:blank';
+			};
 
-            addUserBtn.addEventListener('click', () => { openCreateUserModal('@Url.Action("CreateUser")'); });
-            closeCreateUserModalBtn.addEventListener('click', closeCreateUserModal);
-            createUserModal.addEventListener('click', (e) => {
-                if (e.target === createUserModal) closeCreateUserModal();
-            });
+			addUserBtn.addEventListener('click', () => { openCreateUserModal('@Url.Action("CreateUser")'); });
+			closeCreateUserModalBtn.addEventListener('click', closeCreateUserModal);
+			createUserModal.addEventListener('click', (e) => {
+				if (e.target === createUserModal) closeCreateUserModal();
+			});
 
-            // --- 3. DELETE CONFIRM MODAL (MỚI) ---
-            const deleteConfirmModal = document.getElementById('delete-confirm-modal');
-            const deleteConfirmIframe = document.getElementById('delete-confirm-iframe');
-            const closeDeleteModalBtn = document.getElementById('close-modal-delete-btn');
-            const deleteSelectedBtn = document.getElementById('delete-selected-btn'); // Nút này đã có
+			// --- 3. DELETE CONFIRM MODAL (MỚI) ---
+			const deleteConfirmModal = document.getElementById('delete-confirm-modal');
+			const deleteConfirmIframe = document.getElementById('delete-confirm-iframe');
+			const closeDeleteModalBtn = document.getElementById('close-modal-delete-btn');
+			const deleteSelectedBtn = document.getElementById('delete-selected-btn'); // Nút này đã có
 
-            const openDeleteModal = (url, height = '30rem') => {
-                deleteConfirmIframe.style.height = height;
-                deleteConfirmIframe.src = url;
-                deleteConfirmModal.classList.remove('hidden');
-            };
+			const openDeleteModal = (url, height = '30rem') => {
+				deleteConfirmIframe.style.height = height;
+				deleteConfirmIframe.src = url;
+				deleteConfirmModal.classList.remove('hidden');
+			};
 
-            const closeDeleteModal = () => {
-                deleteConfirmModal.classList.add('hidden');
-                deleteConfirmIframe.src = 'about:blank';
-            };
+			const closeDeleteModal = () => {
+				deleteConfirmModal.classList.add('hidden');
+				deleteConfirmIframe.src = 'about:blank';
+			};
 
-            closeDeleteModalBtn.addEventListener('click', closeDeleteModal);
-            deleteConfirmModal.addEventListener('click', (e) => {
-                if (e.target === deleteConfirmModal) closeDeleteModal();
-            });
+			closeDeleteModalBtn.addEventListener('click', closeDeleteModal);
+			deleteConfirmModal.addEventListener('click', (e) => {
+				if (e.target === deleteConfirmModal) closeDeleteModal();
+			});
 
-            // --- 4. TOGGLE STATUS CONFIRM MODAL (MỚI) ---
-        // (Thêm khối code này vào)
-        const toggleStatusModal = document.getElementById('toggle-status-confirm-modal');
-        const toggleStatusIframe = document.getElementById('toggle-status-confirm-iframe');
-        const closeToggleStatusModalBtn = document.getElementById('close-modal-toggle-btn');
+			// --- 4. TOGGLE STATUS CONFIRM MODAL (MỚI) ---
+		
+		const toggleStatusModal = document.getElementById('toggle-status-confirm-modal');
+		const toggleStatusIframe = document.getElementById('toggle-status-confirm-iframe');
+		const closeToggleStatusModalBtn = document.getElementById('close-modal-toggle-btn');
 
-        const openToggleStatusModal = (url, height = '250px') => {
-            toggleStatusIframe.style.height = height;
-            toggleStatusIframe.src = url;
-            toggleStatusModal.classList.remove('hidden');
-        };
+		const openToggleStatusModal = (url, height = '250px') => {
+			toggleStatusIframe.style.height = height;
+			toggleStatusIframe.src = url;
+			toggleStatusModal.classList.remove('hidden');
+		};
 
-        const closeToggleStatusModal = () => {
-            toggleStatusModal.classList.add('hidden');
-            toggleStatusIframe.src = 'about:blank';
-        };
+		const closeToggleStatusModal = () => {
+			toggleStatusModal.classList.add('hidden');
+			toggleStatusIframe.src = 'about:blank';
+		};
 
-        closeToggleStatusModalBtn.addEventListener('click', closeToggleStatusModal);
-        toggleStatusModal.addEventListener('click', (e) => {
-            if (e.target === toggleStatusModal) closeToggleStatusModal();
-        });
-        // --- KẾT THÚC KHỐI CODE 4 ---
-
-
-            // --- 5. BỘ LẮNG NGHE MESSAGE TỪ IFRAME (Đã sửa) ---
-        window.addEventListener('message', function (event) {
-            // Từ ResetPassword.cshtml
-            if (event.data === 'resetSuccess') {
-                closeResetModal();
-                spinner.classList.remove('hidden');
-                window.location.reload();
-            }
-
-            // Từ Create, Delete, HOẶC TOGGLE STATUS
-            // (Tin nhắn 'userSaved' được gửi từ ReloadParent.cshtml)
-            if (event.data === 'userSaved') {
-                closeCreateUserModal();
-                closeDeleteModal();
-                closeToggleStatusModal(); // <-- THÊM DÒNG NÀY
-                spinner.classList.remove('hidden'); // Hiển thị spinner trước khi reload
-                window.location.reload();
-            }
-
-            // Từ Create, Delete, HOẶC TOGGLE STATUS
-            // (Tin nhắn 'closeUserModal' được gửi từ nút Cancel của iframe)
-            if (event.data === 'closeUserModal') {
-                closeCreateUserModal();
-                closeDeleteModal();
-                closeToggleStatusModal(); // <-- THÊM DÒNG NÀY
-            }
-        }, false);
-        // --- KẾT THÚC SỬA ĐỔI ---
+		closeToggleStatusModalBtn.addEventListener('click', closeToggleStatusModal);
+		toggleStatusModal.addEventListener('click', (e) => {
+			if (e.target === toggleStatusModal) closeToggleStatusModal();
+		});
+		// --- KẾT THÚC KHỐI CODE 4 ---
 
 
-            // --- 5. SCRIPT XÓA HÀNG LOẠT (Cập nhật) ---
-            const selectAllCheckbox = document.getElementById('select-all-checkbox');
-            const userCheckboxes = document.querySelectorAll('.user-checkbox');
+			// --- 5. BỘ LẮNG NGHE MESSAGE TỪ IFRAME (Đã sửa) ---
+		window.addEventListener('message', function (event) {
+			// Từ ResetPassword.cshtml
+			if (event.data === 'resetSuccess') {
+				closeResetModal();
+				spinner.classList.remove('hidden');
+				window.location.reload();
+			}
 
-            function toggleDeleteButton() {
-                const anyChecked = Array.from(userCheckboxes).some(cb => cb.checked);
-                deleteSelectedBtn.classList.toggle('hidden', !anyChecked);
-            }
+			// Từ Create, Delete, HOẶC TOGGLE STATUS
+			// (Tin nhắn 'userSaved' được gửi từ ReloadParent.cshtml)
+			if (event.data === 'userSaved') {
+				closeCreateUserModal();
+				closeDeleteModal();
+				closeToggleStatusModal();
+				closeToggleSqlModal();
+				spinner.classList.remove('hidden'); // Hiển thị spinner trước khi reload
+				window.location.reload();
+			}
 
-            // Thêm "if" để sửa lỗi trong ảnh
-            if (selectAllCheckbox) {
-                selectAllCheckbox.addEventListener('change', function () {
-                    userCheckboxes.forEach(checkbox => { checkbox.checked = this.checked; });
-                    toggleDeleteButton();
-                });
-            }
-
-            userCheckboxes.forEach(checkbox => {
-                checkbox.addEventListener('change', function () {
-                    if (!this.checked) {
-                        if (selectAllCheckbox) selectAllCheckbox.checked = false;
-                    }
-                    else {
-                        if (selectAllCheckbox) selectAllCheckbox.checked = Array.from(userCheckboxes).every(cb => cb.checked);
-                    }
-                    toggleDeleteButton();
-                });
-            });
-
-            // Thêm "if" để sửa lỗi
-            if (deleteSelectedBtn) {
-                deleteSelectedBtn.addEventListener('click', function (e) {
-                    e.preventDefault();
-                    const checkedIds = Array.from(userCheckboxes)
-                        .filter(cb => cb.checked)
-                        .map(cb => cb.value);
-
-                    if (checkedIds.length > 0) {
-                        let url = '@Url.Action("DeleteMultipleConfirmation")' + '?' + checkedIds.map(id => 'userIds=' + encodeURIComponent(id)).join('&');
-
-                        // SỬA: Gọi hàm modal xóa mới
-                        openDeleteModal(url);
-                    }
-                });
-            }
-
-            // --- Tự động ẩn thông báo TempData ---
-            const successAlert = document.querySelector('.bg-green-100[role="alert"]'); // Tìm thông báo thành công [cite: 157]
-            const errorAlert = document.querySelector('.bg-red-100[role="alert"]'); // Tìm thông báo lỗi (nếu có)
-
-            if (successAlert) {
-                setTimeout(() => {
-                    successAlert.style.display = 'none'; // Ẩn đi sau 2 giây
-                }, 2000); // 2000 milliseconds = 2 seconds
-            }
-
-            if (errorAlert) {
-                setTimeout(() => {
-                    errorAlert.style.display = 'none'; // Ẩn đi sau 2 giây
-                }, 2000);
-            }
-            // --- Kết thúc tự động ẩn ---
-
-            // ===================================================
-            // === 4. BẮT ĐẦU CODE MỚI CHO "SEND RESET LINK" ===
-            // ===================================================
-            const sendResetLinks = document.querySelectorAll('.send-reset-link');
-            // Lấy token từ thẻ input ẩn ở đầu file Index.cshtml
-            const token = document.getElementById('RequestVerificationToken').value;
-
-            // Tham chiếu đến spinner đã có
-            const mainSpinner = document.getElementById('loading-spinner');
-
-            // --- TÁCH HTML GỐC RA ĐỂ DÙNG LẠI ---
-            const sendLinkOriginalHtml = `
-                <svg class="w-4 h-4 mr-1.5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                    <path d="M3 4a2 2 0 00-2 2v1.161l8.441 4.221a1.25 1.25 0 001.118 0L19 7.162V6a2 2 0 00-2-2H3z" />
-                    <path d="M19 8.839l-7.77 3.885a2.75 2.75 0 01-2.46 0L1 8.839V14a2 2 0 002 2h14a2 2 0 002-2V8.839z" />
-                </svg>
-                Send Link`; // <-- (Chữ gốc là "Send Link", không phải "Send Reset Link")
-            // ------------------------------------
-
-            sendResetLinks.forEach(link => {
-                link.addEventListener('click', function (e) {
-                    e.preventDefault(); // Ngăn thẻ <a> điều hướng
-
-                    const thisLink = this; // 'this' là thẻ <a> được click
-                    const username = thisLink.dataset.username;
-                    const email = thisLink.dataset.email; 
-
-                    if (!email) {
-                        alert('Error: This user does not have an email address specified in AD.');
-                        return;
-                    }
-
-                    if (!confirm('Are you sure you want to send a password reset link to ' + username + ' (' + email + ')?')) {
-                        return;
-                    }
-
-                    // Vô hiệu hóa link và hiển thị spinner
-                    thisLink.style.pointerEvents = 'none';
-                   thisLink.innerHTML = `
-                        <svg class="w-4 h-4 mr-1.5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                            <path d="M3 4a2 2 0 00-2 2v1.161l8.441 4.221a1.25 1.25 0 001.118 0L19 7.162V6a2 2 0 00-2-2H3z" />
-                            <path d="M19 8.839l-7.77 3.885a2.75 2.75 0 01-2.46 0L1 8.839V14a2 2 0 002 2h14a2 2 0 002-2V8.839z" />
-                        </svg>
-                        Sending...`;
-                    if (mainSpinner) mainSpinner.classList.remove('hidden');
-
-                    // Chuẩn bị dữ liệu cho AJAX (dạng form)
-                    const formData = new URLSearchParams();
-                    formData.append('__RequestVerificationToken', token);
-                    formData.append('username', username);
-                    formData.append('userEmail', email);
-
-                    // Sử dụng fetch (AJAX của JS thuần)
-                    fetch('@Url.Action("SendResetLink", "Management")', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/x-www-form-urlencoded'
-                        },
-                        body: formData
-                    })
-                    .then(response => {
-                        if (!response.ok) {
-                            return response.json().then(err => Promise.reject(err));
-                        }
-                        return response.json();
-                    })
-                    .then(data => {
-                        // Xử lý JSON trả về từ Action (success: true/false)
-                        if (data.success) {
-                            alert(data.message); // Thông báo thành công
-                        } else {
-                            alert('Error: ' + data.message); // Thông báo lỗi
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error sending reset link:', error);
-                        alert('An unexpected error occurred. ' + (error.message || 'Check console.'));
-                    })
-                    .finally(() => {
-                        // Luôn chạy sau khi hoàn tất (dù thành công hay lỗi)
-                        // Khôi phục link và ẩn spinner
-                        thisLink.style.pointerEvents = 'auto';
-                       thisLink.innerHTML = sendLinkOriginalHtml; // Khôi phục HTML gốc
-                        if (mainSpinner) mainSpinner.classList.add('hidden');
-                    });
-                });
-            });
-
-            
-            // ===================================================
-        // === 7. CODE MỚI CHO "ENABLE/DISABLE TOGGLE" (Bản Modal) ===
-        // ===================================================
-        const toggleInputs = document.querySelectorAll('.toggle-status-input');
-
-        toggleInputs.forEach(toggle => {
-            // Chúng ta dùng 'click' thay vì 'change'
-            // để có thể ngăn chặn (preventDefault) hành động gạt nút
-            toggle.addEventListener('click', function (e) {
-                // Ngăn hành động gạt nút ngay lập tức
-                e.preventDefault();
-
-                const thisToggle = this;
-                const username = thisToggle.dataset.username;
-
-                // Đọc trạng thái GỐC từ data-attribute
-                const originalIsEnabled = (thisToggle.dataset.isEnabled === 'true');
-
-                // 1. MỞ MODAL XÁC NHẬN
-                // Gọi Action [HttpGet] ToggleStatusConfirmation (từ Giai đoạn 2.1)
-                // URL sẽ là: /Management/ToggleStatusConfirmation?username=user&isEnabled=true
-                let url = `@Url.Action("ToggleStatusConfirmation", "Management")?username=${encodeURIComponent(username)}&isEnabled=${originalIsEnabled}`;
-
-                // 2. Gọi hàm JS chúng ta vừa thêm ở Bước 4.1
-                openToggleStatusModal(url);
-            });
-        });
+			// Từ Create, Delete, HOẶC TOGGLE STATUS
+			// (Tin nhắn 'closeUserModal' được gửi từ nút Cancel của iframe)
+			if (event.data === 'closeUserModal') {
+				closeCreateUserModal();
+				closeDeleteModal();
+				closeToggleStatusModal(); // <-- THÊM DÒNG NÀY
+				closeToggleSqlModal();
+			}
+		}, false);
+		// --- KẾT THÚC SỬA ĐỔI ---
 
 
-        });
-    </script>
+			// --- 5. SCRIPT XÓA HÀNG LOẠT (Cập nhật) ---
+			const selectAllCheckbox = document.getElementById('select-all-checkbox');
+			const userCheckboxes = document.querySelectorAll('.user-checkbox');
+
+			function toggleDeleteButton() {
+				const anyChecked = Array.from(userCheckboxes).some(cb => cb.checked);
+				deleteSelectedBtn.classList.toggle('hidden', !anyChecked);
+			}
+
+			// Thêm "if" để sửa lỗi trong ảnh
+			if (selectAllCheckbox) {
+				selectAllCheckbox.addEventListener('change', function () {
+					userCheckboxes.forEach(checkbox => { checkbox.checked = this.checked; });
+					toggleDeleteButton();
+				});
+			}
+
+			userCheckboxes.forEach(checkbox => {
+				checkbox.addEventListener('change', function () {
+					if (!this.checked) {
+						if (selectAllCheckbox) selectAllCheckbox.checked = false;
+					}
+					else {
+						if (selectAllCheckbox) selectAllCheckbox.checked = Array.from(userCheckboxes).every(cb => cb.checked);
+					}
+					toggleDeleteButton();
+				});
+			});
+
+			// Thêm "if" để sửa lỗi
+			if (deleteSelectedBtn) {
+				deleteSelectedBtn.addEventListener('click', function (e) {
+					e.preventDefault();
+					const checkedIds = Array.from(userCheckboxes)
+						.filter(cb => cb.checked)
+						.map(cb => cb.value);
+
+					if (checkedIds.length > 0) {
+						let url = '@Url.Action("DeleteMultipleConfirmation")' + '?' + checkedIds.map(id => 'userIds=' + encodeURIComponent(id)).join('&');
+
+						// SỬA: Gọi hàm modal xóa mới
+						openDeleteModal(url);
+					}
+				});
+			}
+
+			// --- Tự động ẩn thông báo TempData ---
+			const successAlert = document.querySelector('.bg-green-100[role="alert"]'); // Tìm thông báo thành công [cite: 157]
+			const errorAlert = document.querySelector('.bg-red-100[role="alert"]'); // Tìm thông báo lỗi (nếu có)
+
+			if (successAlert) {
+				setTimeout(() => {
+					successAlert.style.display = 'none'; // Ẩn đi sau 2 giây
+				}, 2000); // 2000 milliseconds = 2 seconds
+			}
+
+			if (errorAlert) {
+				setTimeout(() => {
+					errorAlert.style.display = 'none'; // Ẩn đi sau 2 giây
+				}, 2000);
+			}
+			// --- Kết thúc tự động ẩn ---
+
+			// ===================================================
+			// === 4. BẮT ĐẦU CODE MỚI CHO "SEND RESET LINK" ===
+			// ===================================================
+			const sendResetLinks = document.querySelectorAll('.send-reset-link');
+			// Lấy token từ thẻ input ẩn ở đầu file Index.cshtml
+			const token = document.getElementById('RequestVerificationToken').value;
+
+			// Tham chiếu đến spinner đã có
+			const mainSpinner = document.getElementById('loading-spinner');
+
+			// --- TÁCH HTML GỐC RA ĐỂ DÙNG LẠI ---
+			const sendLinkOriginalHtml = `
+				<svg class="w-4 h-4 mr-1.5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+					<path d="M3 4a2 2 0 00-2 2v1.161l8.441 4.221a1.25 1.25 0 001.118 0L19 7.162V6a2 2 0 00-2-2H3z" />
+					<path d="M19 8.839l-7.77 3.885a2.75 2.75 0 01-2.46 0L1 8.839V14a2 2 0 002 2h14a2 2 0 002-2V8.839z" />
+				</svg>
+				Send Link`; // <-- (Chữ gốc là "Send Link", không phải "Send Reset Link")
+			// ------------------------------------
+
+			sendResetLinks.forEach(link => {
+				link.addEventListener('click', function (e) {
+					e.preventDefault(); // Ngăn thẻ <a> điều hướng
+
+					const thisLink = this; // 'this' là thẻ <a> được click
+					const username = thisLink.dataset.username;
+					const email = thisLink.dataset.email;
+
+					if (!email) {
+						alert('Error: This user does not have an email address specified in AD.');
+						return;
+					}
+
+					if (!confirm('Are you sure you want to send a password reset link to ' + username + ' (' + email + ')?')) {
+						return;
+					}
+
+					// Vô hiệu hóa link và hiển thị spinner
+					thisLink.style.pointerEvents = 'none';
+				   thisLink.innerHTML = `
+						<svg class="w-4 h-4 mr-1.5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+							<path d="M3 4a2 2 0 00-2 2v1.161l8.441 4.221a1.25 1.25 0 001.118 0L19 7.162V6a2 2 0 00-2-2H3z" />
+							<path d="M19 8.839l-7.77 3.885a2.75 2.75 0 01-2.46 0L1 8.839V14a2 2 0 002 2h14a2 2 0 002-2V8.839z" />
+						</svg>
+						Sending...`;
+					if (mainSpinner) mainSpinner.classList.remove('hidden');
+
+					// Chuẩn bị dữ liệu cho AJAX (dạng form)
+					const formData = new URLSearchParams();
+					formData.append('__RequestVerificationToken', token);
+					formData.append('username', username);
+					formData.append('userEmail', email);
+
+					// Sử dụng fetch (AJAX của JS thuần)
+					fetch('@Url.Action("SendResetLink", "Management")', {
+						method: 'POST',
+						headers: {
+							'Content-Type': 'application/x-www-form-urlencoded'
+						},
+						body: formData
+					})
+					.then(response => {
+						if (!response.ok) {
+							return response.json().then(err => Promise.reject(err));
+						}
+						return response.json();
+					})
+					.then(data => {
+						// Xử lý JSON trả về từ Action (success: true/false)
+						if (data.success) {
+							alert(data.message); // Thông báo thành công
+						} else {
+							alert('Error: ' + data.message); // Thông báo lỗi
+						}
+					})
+					.catch(error => {
+						console.error('Error sending reset link:', error);
+						alert('An unexpected error occurred. ' + (error.message || 'Check console.'));
+					})
+					.finally(() => {
+						// Luôn chạy sau khi hoàn tất (dù thành công hay lỗi)
+						// Khôi phục link và ẩn spinner
+						thisLink.style.pointerEvents = 'auto';
+					   thisLink.innerHTML = sendLinkOriginalHtml; // Khôi phục HTML gốc
+						if (mainSpinner) mainSpinner.classList.add('hidden');
+					});
+				});
+			});
+
+
+			// ===================================================
+		// === 7. CODE MỚI CHO "ENABLE/DISABLE TOGGLE" (Bản Modal) ===
+		// ===================================================
+		const toggleInputs = document.querySelectorAll('.toggle-status-input');
+
+		toggleInputs.forEach(toggle => {
+			// Chúng ta dùng 'click' thay vì 'change'
+			// để có thể ngăn chặn (preventDefault) hành động gạt nút
+			toggle.addEventListener('click', function (e) {
+				// Ngăn hành động gạt nút ngay lập tức
+				e.preventDefault();
+
+				const thisToggle = this;
+				const username = thisToggle.dataset.username;
+
+				// Đọc trạng thái GỐC từ data-attribute
+				const originalIsEnabled = (thisToggle.dataset.isEnabled === 'true');
+
+				// 1. MỞ MODAL XÁC NHẬN
+				// Gọi Action [HttpGet] ToggleStatusConfirmation (từ Giai đoạn 2.1)
+				// URL sẽ là: /Management/ToggleStatusConfirmation?username=user&isEnabled=true
+				let url = `@Url.Action("ToggleStatusConfirmation", "Management")?username=${encodeURIComponent(username)}&isEnabled=${originalIsEnabled}`;
+
+				// 2. Gọi hàm JS chúng ta vừa thêm ở Bước 4.1
+				openToggleStatusModal(url);
+			});
+		});
+
+
+				// ---  TOGGLE SQL ACCESS CONFIRM MODAL ---
+
+		const toggleSqlModal = document.getElementById('toggle-sql-confirm-modal');
+		const toggleSqlIframe = document.getElementById('toggle-sql-confirm-iframe');
+		const closeToggleSqlModalBtn = document.getElementById('close-modal-toggle-sql-btn');
+
+		const openToggleSqlModal = (url, height = '550px') => {
+			toggleSqlIframe.style.height = height;
+			toggleSqlIframe.src = url;
+			toggleSqlModal.classList.remove('hidden');
+		};
+
+		const closeToggleSqlModal = () => {
+			toggleSqlModal.classList.add('hidden');
+			toggleSqlIframe.src = 'about:blank';
+		};
+
+		closeToggleSqlModalBtn.addEventListener('click', closeToggleSqlModal);
+		toggleSqlModal.addEventListener('click', (e) => {
+			if (e.target === toggleSqlModal) closeToggleSqlModal();
+		});
+
+		
+		const toggleSqlInputs = document.querySelectorAll('.toggle-sql-input');
+
+		toggleSqlInputs.forEach(toggle => {
+			
+			toggle.addEventListener('click', function (e) {
+				// Ngăn hành động gạt nút ngay lập tức
+				e.preventDefault();
+
+				const thisToggle = this;
+				const username = thisToggle.dataset.username;
+				const ou = thisToggle.dataset.ou;
+
+				// Đọc trạng thái GỐC từ data-attribute
+				const hasSql = (thisToggle.dataset.hasSqlAccess === 'true');
+
+				// 1. MỞ MODAL XÁC NHẬN
+				// Gọi Action [HttpGet] ToggleSqlConfirmation (từ Giai đoạn 2.1)
+				const url = `@Url.Action("ToggleSqlAccessConfirmation", "Management")`
+						  + `?username=${encodeURIComponent(username)}`
+						  + `&ou=${encodeURIComponent(ou)}`
+						  + `&hasSqlAccess=${hasSql}`;
+				// 2. Gọi hàm JS chúng ta vừa thêm ở Bước 4.1
+				openToggleSqlModal(url);
+			});
+		});
+
+
+		});
+	</script>
 }

@@ -60,6 +60,7 @@
                         @if (User.IsInRole(Roles.SuperAdmin))
                         {
                             <a asp-controller="SuperAdmin" asp-action="Index" class="text-gray-600 hover:bg-gray-100 block px-3 py-2 rounded-md text-base font-medium">Delegation Management</a>
+                            <a asp-controller="SqlMapping" asp-action="Index" class="text-gray-600 hover:bg-gray-100 block px-3 py-2 rounded-md text-base font-medium">SQL Mapping</a>
                         }
                     </div>
                     <div class="pt-4 pb-3 border-t border-gray-200">
