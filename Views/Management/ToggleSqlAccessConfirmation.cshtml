@@ -2,7 +2,7 @@
     Layout = null; // Trang này chạy trong iframe
     string username = ViewBag.Username ;
     string sqlInstance = ViewBag.sqlInstance;
-    bool hasSqlAccess = ViewBag.hasSqlAccess; // Đây là trạng thái GỐC (trước khi gạt)
+    bool hasSqlAccess = ViewBag.HasSqlAccess; // Đây là trạng thái GỐC (trước khi gạt)
     string actionText = hasSqlAccess ? "REVOKE" : "GRANT";
     // Đặt màu cho nút "Confirm"
     string actionColor = hasSqlAccess ? "bg-red-600 hover:bg-red-700" : "bg-green-600 hover:bg-green-700";

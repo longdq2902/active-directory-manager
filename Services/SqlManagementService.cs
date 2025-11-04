@@ -24,7 +24,7 @@ namespace ADPasswordManager.Services
             }
         }
 
-        // Hàm helper để lấy tên login đầy đủ (ví dụ: "TRANSFER3\test.user")
+        
         private string GetSqlLoginName(string adUsername) => $"{_loginPrefix}\\{adUsername}";
 
         public async Task<bool> CheckAccessAsync(string adUsername, string connectionString)
@@ -88,37 +88,114 @@ namespace ADPasswordManager.Services
             }
         }
 
+        //public async Task RevokeSqlAccessAsync(string adUsername, string connectionString)
+        //{
+        //    var sqlLogin = GetSqlLoginName(adUsername);
+        //    _logger.LogWarning("Attempting to REVOKE SQL access from {login}", sqlLogin);
+
+        //    // 1. DROP USER (Database level)
+        //    var query = $"IF EXISTS (SELECT name FROM sys.database_principals WHERE name = @loginName) " +
+        //                $"DROP USER [{sqlLogin}]; " +
+
+        //                // 2. DROP LOGIN (Server level)
+        //                $"IF EXISTS (SELECT name FROM sys.server_principals WHERE name = @loginName) " +
+        //                $"DROP LOGIN [{sqlLogin}];";
+
+        //    try
+        //    {
+        //        using (var connection = new SqlConnection(connectionString))
+        //        {
+        //            await connection.OpenAsync();
+        //            using (var command = new SqlCommand(query, connection))
+        //            {
+        //                command.Parameters.AddWithValue("@loginName", sqlLogin);
+        //                await command.ExecuteNonQueryAsync();
+        //            }
+        //        }
+        //        _logger.LogInformation("Successfully revoked SQL access from {login}", sqlLogin);
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        _logger.LogError(ex, "Failed to revoke SQL access for {login}", sqlLogin);
+        //        throw;
+        //    }
+        //}
         public async Task RevokeSqlAccessAsync(string adUsername, string connectionString)
         {
             var sqlLogin = GetSqlLoginName(adUsername);
-            _logger.LogWarning("Attempting to REVOKE SQL access from {login}", sqlLogin);
+            _logger.LogWarning("Attempting to REVOKE SQL access from {login} (Full Process: KILL + DROP)", sqlLogin);
 
-            // 1. DROP USER (Database level)
-            var query = $"IF EXISTS (SELECT name FROM sys.database_principals WHERE name = @loginName) " +
-                        $"DROP USER [{sqlLogin}]; " +
+            // BƯỚC 1: Script T-SQL để tìm và KILL tất cả các SPID (session ID) của login này.
+            // Nó tìm trong sys.dm_exec_sessions, tạo một chuỗi 'KILL 55;KILL 57;' và thực thi nó.
+            var killQuery = @"
+        DECLARE @loginName nvarchar(128) = @loginNameParam;
+        DECLARE @sql nvarchar(max) = N'';
 
-                        // 2. DROP LOGIN (Server level)
-                        $"IF EXISTS (SELECT name FROM sys.server_principals WHERE name = @loginName) " +
-                        $"DROP LOGIN [{sqlLogin}];";
+        SELECT @sql = @sql + 'KILL ' + CONVERT(varchar(5), session_id) + ';'
+        FROM sys.dm_exec_sessions
+        WHERE login_name = @loginName;
+
+        EXEC sp_executesql @sql;";
+
+            // BƯỚC 2: Script T-SQL để DROP USER (khỏi database, ví dụ: 'master')
+            // Chúng ta dùng dynamic SQL (sp_executesql) vì DROP USER không chấp nhận tên là biến.
+            var userQuery = @"
+        IF EXISTS (SELECT name FROM sys.database_principals WHERE name = @loginNameParam)
+        BEGIN
+            DECLARE @userSql nvarchar(max) = N'DROP USER ' + QUOTENAME(@loginNameParam);
+            EXEC sp_executesql @userSql;
+        END";
+
+            // BƯỚC 3: Script T-SQL để DROP LOGIN (khỏi Server)
+            var loginQuery = @"
+        IF EXISTS (SELECT name FROM sys.server_principals WHERE name = @loginNameParam)
+        BEGIN
+            DECLARE @loginSql nvarchar(max) = N'DROP LOGIN ' + QUOTENAME(@loginNameParam);
+            EXEC sp_executesql @loginSql;
+        END";
 
             try
             {
                 using (var connection = new SqlConnection(connectionString))
                 {
                     await connection.OpenAsync();
-                    using (var command = new SqlCommand(query, connection))
+
+                    // --- CHẠY BƯỚC 1: KILL SESSIONS ---
+                    _logger.LogInformation("Step 1: Killing active sessions for {login}", sqlLogin);
+                    using (var commandKill = new SqlCommand(killQuery, connection))
                     {
-                        command.Parameters.AddWithValue("@loginName", sqlLogin);
-                        await command.ExecuteNonQueryAsync();
+                        commandKill.Parameters.AddWithValue("@loginNameParam", sqlLogin);
+                        await commandKill.ExecuteNonQueryAsync();
+                        _logger.LogInformation("Successfully killed sessions for {login}.", sqlLogin);
+                    }
+
+                    // --- CHẠY BƯỚC 2: DROP USER ---
+                    _logger.LogInformation("Step 2: Dropping USER {login}", sqlLogin);
+                    using (var commandUser = new SqlCommand(userQuery, connection))
+                    {
+                        commandUser.Parameters.AddWithValue("@loginNameParam", sqlLogin);
+                        await commandUser.ExecuteNonQueryAsync();
+                        _logger.LogInformation("Successfully dropped USER {login}.", sqlLogin);
+                    }
+
+                    // --- CHẠY BƯỚC 3: DROP LOGIN ---
+                    _logger.LogInformation("Step 3: Dropping LOGIN {login}", sqlLogin);
+                    using (var commandLogin = new SqlCommand(loginQuery, connection))
+                    {
+                        commandLogin.Parameters.AddWithValue("@loginNameParam", sqlLogin);
+                        await commandLogin.ExecuteNonQueryAsync();
+                        _logger.LogInformation("Successfully dropped LOGIN {login}.", sqlLogin);
                     }
                 }
-                _logger.LogInformation("Successfully revoked SQL access from {login}", sqlLogin);
+
+                _logger.LogInformation("Successfully revoked all SQL access for {login}", sqlLogin);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to revoke SQL access for {login}", sqlLogin);
-                throw;
+                throw; // Ném lỗi ra để Controller bắt và hiển thị
             }
         }
+
     }
 }

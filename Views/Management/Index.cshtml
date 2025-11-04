@@ -347,7 +347,7 @@
 												   class="sr-only peer toggle-sql-input"
 												   data-username="@user.Username"
 												   data-sql="@user.MappedSqlInstance"
-												   data-is-sql="@user.HasSqlAccess.ToString().ToLowerInvariant()"
+												   data-hassqlaccess="@user.HasSqlAccess.ToString().ToLowerInvariant()"
 												   @if (user.HasSqlAccess)
 												   {
 												<text>checked</text>
@@ -786,7 +786,7 @@
 				const sqlInstance = thisToggle.dataset.sql;
 
 				// Đọc trạng thái GỐC từ data-attribute
-				const hasSql = (thisToggle.dataset.hasSqlAccess === 'true');
+				const hasSql = (thisToggle.dataset.hassqlaccess === 'true');
 
 				// 1. MỞ MODAL XÁC NHẬN
 				// Gọi Action [HttpGet] ToggleSqlConfirmation (từ Giai đoạn 2.1)
