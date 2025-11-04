@@ -399,9 +399,9 @@ namespace ADPasswordManager.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         
-        public async Task<IActionResult> ToggleSqlAccess(string username, string ou)
+        public async Task<IActionResult> ToggleSqlAccess(string username, string sqlInstance)
         {
-            if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(ou))
+            if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(sqlInstance))
             {
                 TempData["ErrorMessage"] = "An error occurred: Username or OU was missing.";
                 return View("ReloadParent"); // Dùng lại view ReloadParent
@@ -409,14 +409,9 @@ namespace ADPasswordManager.Controllers
 
             try
             {
-                // 1. Tìm mapping và build connection string
-                var mapping = await _context.OuSqlInstanceMappings.FirstOrDefaultAsync(m => m.OuDistinguishedName == ou);
-                if (mapping == null)
-                {
-                    throw new Exception($"No SQL instance is mapped to OU: {ou}");
-                }
+              
 
-                var connectionString = BuildSqlConnectionString(mapping.SqlInstanceName);
+                var connectionString = BuildSqlConnectionString(sqlInstance);
                 if (connectionString == null)
                 {
                     throw new Exception("SQL Delegation admin credentials are not configured in appsettings.");
@@ -451,16 +446,18 @@ namespace ADPasswordManager.Controllers
 
 
         [HttpGet]
-        public IActionResult ToggleSqlAccessConfirmation(string username, string ou, bool hasSqlAccess)
+        public IActionResult ToggleSqlAccessConfirmation(string username, string sqlInstance, bool hasSqlAccess)
         {
             if (string.IsNullOrWhiteSpace(username))
             {
                 return View("Error"); // Hoặc một view lỗi chung
             }
+            _logger.LogInformation("User: {Username}, sqlInstance: {sqlInstance}, Current hasSqlAccess: {HasSqlAccess}",
+        username, sqlInstance, hasSqlAccess);
 
             // Truyền 2 giá trị này sang View
             ViewBag.Username = username;
-            ViewBag.Ou = ou;
+            ViewBag.sqlInstance = sqlInstance;
             ViewBag.HasSqlAccess = hasSqlAccess;
 
             return View(); // Sẽ trả về Views/Management/ToggleStatusConfirmation.cshtml

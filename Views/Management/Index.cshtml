@@ -338,45 +338,51 @@
 
 
 								<td class="px-5 py-4 text-sm">
-									<label for="toggle-input-sql-@user.Username" class="relative inline-flex items-center cursor-pointer">
-										<input type="checkbox"
-											   value=""
-											   id="toggle-input-sql-@user.Username"
-											   class="sr-only peer toggle-sql-input"
-											   data-username="@user.Username"
-											   data-ou="@user.MappedSqlInstance"
-											   data-is-sql="@user.HasSqlAccess.ToString().ToLowerInvariant()"
-											   @if (user.HasSqlAccess)
-											   {
-											<text>checked</text>
-										}
-										>
-										<div class="w-11 h-6 bg-gray-200 rounded-full
-										peer peer-focus:outline-none
-										peer-focus:ring-4 peer-focus:ring-blue-300
-										dark:peer-focus:ring-blue-800
-										peer-checked:after:translate-x-full
-										peer-checked:after:border-white
-										after:content-['']
-										after:absolute after:top-[2px] after:left-[2px]
-										after:bg-white after:border-gray-300 after:border after:rounded-full
-										after:h-5 after:w-5
-										after:transition-all
-										dark:border-gray-600
-										peer-checked:bg-green-600">
-										</div>
-										<span id="sql-text-@user.Username" class="ml-3 text-sm font-medium text-gray-900">
-											@if (user.HasSqlAccess)
-											{
-												<text>OK</text>
+									@if (user.IsSqlMappingAvailable)
+									{
+										<label for="toggle-input-sql-@user.Username" class="relative inline-flex items-center cursor-pointer">
+											<input type="checkbox"
+												   value=""
+												   id="toggle-input-sql-@user.Username"
+												   class="sr-only peer toggle-sql-input"
+												   data-username="@user.Username"
+												   data-sql="@user.MappedSqlInstance"
+												   data-is-sql="@user.HasSqlAccess.ToString().ToLowerInvariant()"
+												   @if (user.HasSqlAccess)
+												   {
+												<text>checked</text>
 											}
-											else
-											{
-												<text>Not OK</text>
-											}
-										</span>
-									</label>
-
+											>
+											<div class="w-11 h-6 bg-gray-200 rounded-full
+											peer peer-focus:outline-none
+											peer-focus:ring-4 peer-focus:ring-blue-300
+											dark:peer-focus:ring-blue-800
+											peer-checked:after:translate-x-full
+											peer-checked:after:border-white
+											after:content-['']
+											after:absolute after:top-[2px] after:left-[2px]
+											after:bg-white after:border-gray-300 after:border after:rounded-full
+											after:h-5 after:w-5
+											after:transition-all
+											dark:border-gray-600
+											peer-checked:bg-green-600">
+											</div>
+											<span id="sql-text-@user.Username" class="ml-3 text-sm font-medium text-gray-900">
+												@if (user.HasSqlAccess )
+												{
+													<text>OK</text>
+												}
+												else
+												{
+													<text>Not OK</text>
+												}
+											</span>
+										</label>
+									}
+									else
+									{
+										<span class="text-gray-400 italic">N/A</span>
+									}
 								</td>
 								<td class="px-5 py-4 text-sm">
 									<div class="flex items-center space-x-2">
@@ -777,7 +783,7 @@
 
 				const thisToggle = this;
 				const username = thisToggle.dataset.username;
-				const ou = thisToggle.dataset.ou;
+				const sqlInstance = thisToggle.dataset.sql;
 
 				// Đọc trạng thái GỐC từ data-attribute
 				const hasSql = (thisToggle.dataset.hasSqlAccess === 'true');
@@ -786,7 +792,7 @@
 				// Gọi Action [HttpGet] ToggleSqlConfirmation (từ Giai đoạn 2.1)
 				const url = `@Url.Action("ToggleSqlAccessConfirmation", "Management")`
 						  + `?username=${encodeURIComponent(username)}`
-						  + `&ou=${encodeURIComponent(ou)}`
+						  + `&sqlInstance=${encodeURIComponent(sqlInstance)}`
 						  + `&hasSqlAccess=${hasSql}`;
 				// 2. Gọi hàm JS chúng ta vừa thêm ở Bước 4.1
 				openToggleSqlModal(url);

@@ -1,7 +1,7 @@
 ﻿@{
     Layout = null; // Trang này chạy trong iframe
     string username = ViewBag.Username ;
-    string ou = ViewBag.Ou;
+    string sqlInstance = ViewBag.sqlInstance;
     bool hasSqlAccess = ViewBag.hasSqlAccess; // Đây là trạng thái GỐC (trước khi gạt)
     string actionText = hasSqlAccess ? "REVOKE" : "GRANT";
     // Đặt màu cho nút "Confirm"
@@ -35,10 +35,10 @@
         </div>
     }
 
-    <form asp-action="ToggleAccountStatus" method="post" class="mt-6">
+    <form asp-action="ToggleSqlAccess" method="post" class="mt-6">
         @Html.AntiForgeryToken()
         <input type="text" name="username" value="@username" />
-        <input type="text" name="ou" value="@ou" />
+        <input type="text" name="sqlInstance" value="@sqlInstance" />
 
         <div class="flex justify-center space-x-4">
             <button type"button" id="cancelButton"
