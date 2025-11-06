@@ -216,14 +216,20 @@
 			<div class="flex justify-between items-center mb-6">
 				<h1 class="text-3xl font-bold text-gray-800">@ViewData["Title"]</h1>
 				<div>
-					<button id="delete-selected-btn"
-							class="hidden inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700">
-						Delete User
-					</button>
-					<button id="add-user-btn"
-							class="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700">
-						Create User
-					</button>
+					@if (Model.EnableDeleteUser)
+					{
+						<button id="delete-selected-btn"
+								class="hidden inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700">
+							Delete User
+						</button>
+					}
+					@if (Model.EnableCreateUser)
+					{
+						<button id="add-user-btn"
+								class="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700">
+							Create User
+						</button>
+					}
 				</div>
 			</div>
 
@@ -267,8 +273,10 @@
 							<th class="px-5 py-3 text-center">Never Expires</th>
 							<th class="px-5 py-3 text-center">Change At Logon</th>
 							<th class="px-5 py-3 text-center">Status</th>
-							@* <th class="px-5 py-3 ">SQL Instance</th> *@
-							<th class="px-5 py-3 text-center">SQL Access </th>
+							@if (Model.EnableSqlAccessToggle)
+							{
+								<th class="px-5 py-3 text-center">SQL Access </th>
+							}
 							<th class="px-5 py-3">Actions</th>
 						</tr>
 					</thead>
@@ -304,23 +312,23 @@
 											   data-username="@user.Username"
 											   data-is-enabled="@user.IsEnabled.ToString().ToLowerInvariant()"
 											   @if (user.IsEnabled)
-											{
-												   <text>checked</text>
-											   }
+											   {
+											<text>checked</text>
+										}
 										>
 										<div class="w-11 h-6 bg-gray-200 rounded-full
-	                                                peer peer-focus:outline-none
-	                                                peer-focus:ring-4 peer-focus:ring-blue-300
-	                                                dark:peer-focus:ring-blue-800
-	                                                peer-checked:after:translate-x-full
-	                                                peer-checked:after:border-white
-	                                                after:content-['']
-	                                                after:absolute after:top-[2px] after:left-[2px]
-	                                                after:bg-white after:border-gray-300 after:border after:rounded-full
-	                                                after:h-5 after:w-5
-	                                                after:transition-all
-	                                                dark:border-gray-600
-	                                                peer-checked:bg-green-600">
+				                                                peer peer-focus:outline-none
+				                                                peer-focus:ring-4 peer-focus:ring-blue-300
+				                                                dark:peer-focus:ring-blue-800
+				                                                peer-checked:after:translate-x-full
+				                                                peer-checked:after:border-white
+				                                                after:content-['']
+				                                                after:absolute after:top-[2px] after:left-[2px]
+				                                                after:bg-white after:border-gray-300 after:border after:rounded-full
+				                                                after:h-5 after:w-5
+				                                                after:transition-all
+				                                                dark:border-gray-600
+				                                                peer-checked:bg-green-600">
 										</div>
 										<span id="status-text-@user.Username" class="ml-3 text-sm font-medium text-gray-900">
 											@if (user.IsEnabled)
@@ -336,54 +344,56 @@
 
 								</td>
 
-
-								<td class="px-5 py-4 text-sm">
-									@if (user.IsSqlMappingAvailable)
-									{
-										<label for="toggle-input-sql-@user.Username" class="relative inline-flex items-center cursor-pointer">
-											<input type="checkbox"
-												   value=""
-												   id="toggle-input-sql-@user.Username"
-												   class="sr-only peer toggle-sql-input"
-												   data-username="@user.Username"
-												   data-sql="@user.MappedSqlInstance"
-												   data-hassqlaccess="@user.HasSqlAccess.ToString().ToLowerInvariant()"
-												   @if (user.HasSqlAccess)
-												   {
-												<text>checked</text>
-											}
-											>
-											<div class="w-11 h-6 bg-gray-200 rounded-full
-											peer peer-focus:outline-none
-											peer-focus:ring-4 peer-focus:ring-blue-300
-											dark:peer-focus:ring-blue-800
-											peer-checked:after:translate-x-full
-											peer-checked:after:border-white
-											after:content-['']
-											after:absolute after:top-[2px] after:left-[2px]
-											after:bg-white after:border-gray-300 after:border after:rounded-full
-											after:h-5 after:w-5
-											after:transition-all
-											dark:border-gray-600
-											peer-checked:bg-green-600">
-											</div>
-											<span id="sql-text-@user.Username" class="ml-3 text-sm font-medium text-gray-900">
-												@if (user.HasSqlAccess )
-												{
-													<text>OK</text>
+								@if (Model.EnableSqlAccessToggle)
+								{
+									<td class="px-5 py-4 text-sm">
+										@if (user.IsSqlMappingAvailable)
+										{
+											<label for="toggle-input-sql-@user.Username" class="relative inline-flex items-center cursor-pointer">
+												<input type="checkbox"
+													   value=""
+													   id="toggle-input-sql-@user.Username"
+													   class="sr-only peer toggle-sql-input"
+													   data-username="@user.Username"
+													   data-sql="@user.MappedSqlInstance"
+													   data-hassqlaccess="@user.HasSqlAccess.ToString().ToLowerInvariant()"
+													   @if (user.HasSqlAccess)
+													   {
+													<text>checked</text>
 												}
-												else
-												{
-													<text>Not OK</text>
-												}
-											</span>
-										</label>
-									}
-									else
-									{
-										<span class="text-gray-400 italic">N/A</span>
-									}
-								</td>
+												>
+												<div class="w-11 h-6 bg-gray-200 rounded-full
+																		peer peer-focus:outline-none
+																		peer-focus:ring-4 peer-focus:ring-blue-300
+																		dark:peer-focus:ring-blue-800
+																		peer-checked:after:translate-x-full
+																		peer-checked:after:border-white
+																		after:content-['']
+																		after:absolute after:top-[2px] after:left-[2px]
+																		after:bg-white after:border-gray-300 after:border after:rounded-full
+																		after:h-5 after:w-5
+																		after:transition-all
+																		dark:border-gray-600
+																		peer-checked:bg-green-600">
+												</div>
+												<span id="sql-text-@user.Username" class="ml-3 text-sm font-medium text-gray-900">
+													@if (user.HasSqlAccess)
+													{
+														<text>OK</text>
+													}
+													else
+													{
+														<text>Not OK</text>
+													}
+												</span>
+											</label>
+										}
+										else
+										{
+											<span class="text-gray-400 italic">N/A</span>
+										}
+									</td>
+								}
 								<td class="px-5 py-4 text-sm">
 									<div class="flex items-center space-x-2">
 
@@ -396,19 +406,21 @@
 											</svg>
 											Reset Password
 										</a>
+										@if (Model.EnableSendPasswordResetLink)
+										{
+											<a href="#"
+											   class="send-reset-link inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+											   data-username="@user.Username"
+											   data-email="@user.EmailAddress"
+											   title="Send password reset link to user's email">
 
-										<a href="#"
-										   class="send-reset-link inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
-										   data-username="@user.Username"
-										   data-email="@user.EmailAddress"
-										   title="Send password reset link to user's email">
-
-											<svg class="w-4 h-4 mr-1.5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-												<path d="M3 4a2 2 0 00-2 2v1.161l8.441 4.221a1.25 1.25 0 001.118 0L19 7.162V6a2 2 0 00-2-2H3z" />
-												<path d="M19 8.839l-7.77 3.885a2.75 2.75 0 01-2.46 0L1 8.839V14a2 2 0 002 2h14a2 2 0 002-2V8.839z" />
-											</svg>
-											Send Link
-										</a>
+												<svg class="w-4 h-4 mr-1.5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+													<path d="M3 4a2 2 0 00-2 2v1.161l8.441 4.221a1.25 1.25 0 001.118 0L19 7.162V6a2 2 0 00-2-2H3z" />
+													<path d="M19 8.839l-7.77 3.885a2.75 2.75 0 01-2.46 0L1 8.839V14a2 2 0 002 2h14a2 2 0 002-2V8.839z" />
+												</svg>
+												Send Link
+											</a>
+										}
 									</div>
 								</td>
 							</tr>
@@ -485,7 +497,9 @@
 				createUserIframe.src = 'about:blank';
 			};
 
-			addUserBtn.addEventListener('click', () => { openCreateUserModal('@Url.Action("CreateUser")'); });
+			if (addUserBtn) {
+				addUserBtn.addEventListener('click', () => { openCreateUserModal('@Url.Action("CreateUser")'); });
+			}
 			closeCreateUserModalBtn.addEventListener('click', closeCreateUserModal);
 			createUserModal.addEventListener('click', (e) => {
 				if (e.target === createUserModal) closeCreateUserModal();
@@ -514,7 +528,7 @@
 			});
 
 			// --- 4. TOGGLE STATUS CONFIRM MODAL (MỚI) ---
-		
+
 		const toggleStatusModal = document.getElementById('toggle-status-confirm-modal');
 		const toggleStatusIframe = document.getElementById('toggle-status-confirm-iframe');
 		const closeToggleStatusModalBtn = document.getElementById('close-modal-toggle-btn');
@@ -578,7 +592,7 @@
 				deleteSelectedBtn.classList.toggle('hidden', !anyChecked);
 			}
 
-			// Thêm "if" để sửa lỗi trong ảnh
+			
 			if (selectAllCheckbox) {
 				selectAllCheckbox.addEventListener('change', function () {
 					userCheckboxes.forEach(checkbox => { checkbox.checked = this.checked; });
@@ -772,11 +786,11 @@
 			if (e.target === toggleSqlModal) closeToggleSqlModal();
 		});
 
-		
+
 		const toggleSqlInputs = document.querySelectorAll('.toggle-sql-input');
 
 		toggleSqlInputs.forEach(toggle => {
-			
+
 			toggle.addEventListener('click', function (e) {
 				// Ngăn hành động gạt nút ngay lập tức
 				e.preventDefault();

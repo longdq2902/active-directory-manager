@@ -1,6 +1,12 @@
 ﻿@using ADPasswordManager.Constants
 @using Microsoft.AspNetCore.Identity
 @inject SignInManager<IdentityUser> SignInManager
+@using ADPasswordManager.Models.Configuration
+@using Microsoft.Extensions.Options
+@inject IOptions<FeatureSettings> FeatureSettings
+@{
+    var features = FeatureSettings.Value;
+}
 
 <!DOCTYPE html>
 <html lang="en">
@@ -28,8 +34,11 @@
                                     @if (User.IsInRole(Roles.SuperAdmin))
                                     {
                                         <a asp-controller="SuperAdmin" asp-action="Index" class="text-gray-500 hover:bg-gray-100 px-3 py-2 rounded-md text-sm font-medium">Delegation Management</a>
-                                        <a asp-controller="SqlMapping" asp-action="Index" class="text-gray-500 hover:bg-gray-100 px-3 py-2 rounded-md text-sm font-medium">SQL Mappings</a>
-                                     }
+                                        @if (features.EnableSqlAccessToggle)
+                                        {
+                                            <a asp-controller="SqlMapping" asp-action="Index" class="text-gray-500 hover:bg-gray-100 px-3 py-2 rounded-md text-sm font-medium">SQL Mappings</a>
+                                        }
+                                    }
                                 </div>
                             </div>
                         }

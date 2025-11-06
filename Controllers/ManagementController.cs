@@ -1,18 +1,20 @@
 ﻿using ADPasswordManager.Constants;
 using ADPasswordManager.Data;
+using ADPasswordManager.Models.Configuration;
 using ADPasswordManager.Models.ViewModels;
 using ADPasswordManager.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
-using System.DirectoryServices;
-using System.DirectoryServices.AccountManagement;
-using System.Runtime.Versioning;
 using Microsoft.Extensions.Configuration; 
 using System.Collections.Generic; 
+using System.DirectoryServices;
+using System.DirectoryServices.AccountManagement;
 using System.Linq;
+using System.Runtime.Versioning;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Options; 
 
 namespace ADPasswordManager.Controllers
 {
@@ -26,10 +28,11 @@ namespace ADPasswordManager.Controllers
         private readonly ApplicationDbContext _context;
         private readonly ISqlManagementService _sqlService;
         private readonly IConfiguration _configuration;
+        private readonly FeatureSettings _featureSettings; 
 
         public ManagementController(ILogger<ManagementController> logger, ADManagementService adManagementService, 
             IPasswordResetService passwordResetService, ApplicationDbContext context,
-            ISqlManagementService sqlService, IConfiguration configuration)
+            ISqlManagementService sqlService, IConfiguration configuration, IOptions<FeatureSettings> featureSettings)
         {
             _logger = logger;
             _adManagementService = adManagementService;
@@ -37,6 +40,7 @@ namespace ADPasswordManager.Controllers
             _context = context;
             _sqlService = sqlService;
             _configuration = configuration;
+            _featureSettings = featureSettings.Value;
         }
 
     public async Task<IActionResult> Index(string? selectedOU, string? searchTerm)
@@ -74,16 +78,7 @@ namespace ADPasswordManager.Controllers
             // Map UserPrincipal sang UserViewModel (giữ nguyên)
             var userViewModels = new List<UserViewModel>();
 
-            //var userViewModels = users.Select(user => new UserViewModel
-            //{
-            //    Username = user.SamAccountName,
-            //    DisplayName = user.DisplayName,
-            //    EmailAddress = user.EmailAddress,
-            //    IsPasswordNeverExpires = user.PasswordNeverExpires,
-            //    IsPasswordChangeRequired = (user.LastPasswordSet == null),
-            //    IsEnabled = user.Enabled ?? false,
-            //    MappedSqlInstance = mappedSqlInstance
-            //}).ToList();
+  
             foreach (var user in users)
             {
                 bool hasSqlAccess = false;
@@ -135,11 +130,14 @@ namespace ADPasswordManager.Controllers
             var viewModel = new UserManagementViewModel
             {
                 Users = userViewModels,
-                // GÁN VÀO AvailableOUs (thay vì AvailableGroups)
                 AvailableOUs = new SelectList(ouSelectList, "Value", "Text", selectedOU),
-                // GÁN VÀO SelectedOU (thay vì SelectedGroup)
                 SelectedOU = selectedOU,
-                SearchTerm = searchTerm
+                SearchTerm = searchTerm,
+                EnableCreateUser = _featureSettings.EnableCreateUser,
+                EnableDeleteUser = _featureSettings.EnableDeleteUser,
+                EnableSendPasswordResetLink = _featureSettings.EnableSendPasswordResetLink,
+                EnableSqlAccessToggle = _featureSettings.EnableSqlAccessToggle 
+
             };
 
             return View(viewModel);
@@ -203,6 +201,7 @@ namespace ADPasswordManager.Controllers
         // GET: Management/CreateUser
         public IActionResult CreateUser()
         {
+            if (!_featureSettings.EnableCreateUser) return Forbid();
             var model = new CreateUserViewModel
             {
                 // Gọi service để lấy danh sách OU
@@ -217,6 +216,7 @@ namespace ADPasswordManager.Controllers
         [ValidateAntiForgeryToken]
         public IActionResult CreateUser(CreateUserViewModel model)
         {
+            if (!_featureSettings.EnableCreateUser) return Forbid();
             if (string.IsNullOrEmpty(model.Username))
             {
                 ModelState.AddModelError("Username", "The Username field is required.");
@@ -274,6 +274,7 @@ namespace ADPasswordManager.Controllers
         [HttpGet]
         public IActionResult DeleteMultipleConfirmation([FromQuery] List<string> userIds)
         {
+            if (!_featureSettings.EnableDeleteUser) return Forbid();
             if (userIds == null || !userIds.Any())
             {
                 return BadRequest("No users selected.");
@@ -286,6 +287,7 @@ namespace ADPasswordManager.Controllers
         [ValidateAntiForgeryToken]
         public IActionResult DeleteMultiple(DeleteMultipleViewModel model)
         {
+            if (!_featureSettings.EnableDeleteUser) return Forbid();
             if (model.UserIds == null || !model.UserIds.Any())
             {
                 TempData["ErrorMessage"] = "No users were selected for deletion.";
@@ -312,7 +314,8 @@ namespace ADPasswordManager.Controllers
         [ValidateAntiForgeryToken] // Đảm bảo an toàn
         public async Task<IActionResult> SendResetLink(string username, string userEmail)
         {
-            if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(userEmail))
+            if (!_featureSettings.EnableSendPasswordResetLink)
+                if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(userEmail))
             {
                 return Json(new { success = false, message = "Username or Email is missing." });
             }
@@ -401,6 +404,11 @@ namespace ADPasswordManager.Controllers
         
         public async Task<IActionResult> ToggleSqlAccess(string username, string sqlInstance)
         {
+            if (!_featureSettings.EnableSqlAccessToggle)
+            {
+                TempData["ErrorMessage"] = "This feature is currently disabled by the administrator.";
+                return View("ReloadParent"); // Chặn và tải lại trang
+            }
             if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(sqlInstance))
             {
                 TempData["ErrorMessage"] = "An error occurred: Username or OU was missing.";

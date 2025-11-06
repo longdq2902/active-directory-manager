@@ -1,5 +1,6 @@
 ﻿using ADPasswordManager.Constants;
 using ADPasswordManager.Data;
+using ADPasswordManager.Models.Configuration;
 using ADPasswordManager.Models.Entities;
 using ADPasswordManager.Models.ViewModels;
 using ADPasswordManager.Services;
@@ -7,9 +8,11 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering; // Cần dùng cho 'SelectList'
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using System.Linq;
 using System.Runtime.Versioning;
 using System.Threading.Tasks;
+
 
 namespace ADPasswordManager.Controllers
 {
@@ -20,17 +23,21 @@ namespace ADPasswordManager.Controllers
         private readonly ApplicationDbContext _context;
         private readonly ADManagementService _adManagementService;
         private readonly ILogger<SqlMappingController> _logger;
+        private readonly FeatureSettings _featureSettings;
 
-        public SqlMappingController(ApplicationDbContext context, ADManagementService adManagementService, ILogger<SqlMappingController> logger)
+        public SqlMappingController(ApplicationDbContext context, ADManagementService adManagementService, 
+            ILogger<SqlMappingController> logger, IOptions<FeatureSettings> featureSettings)
         {
             _context = context;
             _adManagementService = adManagementService;
             _logger = logger;
+            _featureSettings = featureSettings.Value; 
         }
 
         // GET: SqlMapping
         public async Task<IActionResult> Index()
         {
+            if (!_featureSettings.EnableSqlAccessToggle) return NotFound(); 
             var mappings = await _context.OuSqlInstanceMappings.OrderBy(m => m.OuDistinguishedName).ToListAsync();
             return View(mappings);
         }
@@ -38,6 +45,7 @@ namespace ADPasswordManager.Controllers
         // --- SỬA LẠI CREATE (GET) ---
         public IActionResult Create()
         {
+            if (!_featureSettings.EnableSqlAccessToggle) return NotFound(); 
             var allOUs = _adManagementService.GetAllOUs();
             ViewBag.AllOUs = new SelectList(allOUs);
             return View(new SqlMappingViewModel());

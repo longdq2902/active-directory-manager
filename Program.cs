@@ -46,6 +46,7 @@ try
     // --- Thêm các dòng này ---
     // Đọc cấu hình SmtpSettings
     builder.Services.Configure<SmtpSettings>(builder.Configuration.GetSection("SmtpSettings"));
+    builder.Services.Configure<FeatureSettings>(builder.Configuration.GetSection("FeatureSettings"));
     // Đăng ký EmailService
     builder.Services.AddScoped<IEmailService, EmailService>();
 
@@ -55,6 +56,7 @@ try
     builder.Services.AddHostedService<TokenCleanupService>();
     builder.Services.AddScoped<ISqlManagementService, SqlManagementService>();
     builder.Services.AddScoped<ADPasswordManager.Services.ADManagementService>();
+
 
     var app = builder.Build();
 
