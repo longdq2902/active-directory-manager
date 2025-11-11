@@ -5,10 +5,21 @@ using Microsoft.CodeAnalysis.Elfie.Serialization;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
 
+
+// Đọc cấu hình tạm thời để lấy đường dẫn log cho bootstrap logger
+var tempConfig = new ConfigurationBuilder()
+    .SetBasePath(AppContext.BaseDirectory)
+    .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+    .Build();
+
+// Lấy đường dẫn log từ config, nếu không có thì dùng đường dẫn tương đối
+var bootstrapLogPath = tempConfig["LoggingSettings:LogFilePath"] ?? Path.Combine(AppContext.BaseDirectory, "logs/ad-password-manager-.txt");
+
+
 // Cấu hình logger của Serilog
 Log.Logger = new LoggerConfiguration()
     .WriteTo.Console()
-    .WriteTo.File(Path.Combine(AppContext.BaseDirectory, "logs/ad-password-manager-.txt"), rollingInterval: RollingInterval.Day)
+    .WriteTo.File(bootstrapLogPath, rollingInterval: RollingInterval.Day)
     .CreateBootstrapLogger();
 
 
@@ -21,13 +32,23 @@ try
     var builder = WebApplication.CreateBuilder(args);
 
     // Bảo với host sử dụng Serilog thay vì logger mặc định
-    builder.Host.UseSerilog((context, services, configuration) => configuration
-        .ReadFrom.Configuration(context.Configuration)
-        .ReadFrom.Services(services)
-        .Enrich.FromLogContext()
-        .WriteTo.Console()
-        .WriteTo.File(@"C:\logs\ad-password-manager-.txt", rollingInterval: RollingInterval.Day)); // <-- Thêm dòng này
-        
+    builder.Host.UseSerilog((context, services, configuration) =>
+    {
+        // --- THAY ĐỔI Ở ĐÂY (Main Logger) ---
+
+        // Đọc đường dẫn log từ file cấu hình
+        // Dùng giá trị của bootstrap làm fallback nếu không tìm thấy key
+        var logPath = context.Configuration["LoggingSettings:LogFilePath"] ?? bootstrapLogPath;
+
+        configuration
+            .ReadFrom.Configuration(context.Configuration)
+            .ReadFrom.Services(services)
+            .Enrich.FromLogContext()
+            .WriteTo.Console()
+            .WriteTo.File(logPath, rollingInterval: RollingInterval.Day); // <-- Sử dụng biến logPath
+
+        // --- KẾT THÚC THAY ĐỔI ---
+    });
 
     // Add services to the container.
     // Lấy ra DbContext connection string
