@@ -13,8 +13,8 @@ namespace ADPasswordManager.Services
         private readonly ILogger<ADManagementService> _logger;
         private readonly ApplicationDbContext _context; // <-- Thay thế IConfiguration và DelegationSettings bằng DbContext
         private readonly string _domain;
-        private readonly string _serviceUser;
-        private readonly string _servicePassword;
+        //private readonly string _serviceUser;
+        //private readonly string _servicePassword;
         private readonly string _serviceOU;
         private readonly string _domainController;
 
@@ -26,8 +26,8 @@ namespace ADPasswordManager.Services
 
             // Các cấu hình AD vẫn đọc từ appsettings.json
             _domain = configuration.GetValue<string>("ADSettings:Domain") ?? string.Empty;
-            _serviceUser = configuration.GetValue<string>("ADSettings:ServiceUser") ?? string.Empty;
-            _servicePassword = configuration.GetValue<string>("ADSettings:ServicePassword") ?? string.Empty;
+            //_serviceUser = configuration.GetValue<string>("ADSettings:ServiceUser") ?? string.Empty;
+            //_servicePassword = configuration.GetValue<string>("ADSettings:ServicePassword") ?? string.Empty;
             _serviceOU = configuration.GetValue<string>("ADSettings:ServiceOU") ?? string.Empty;
             _domainController = configuration.GetValue<string>("ADSettings:DomainController") ?? string.Empty;
         }
@@ -47,11 +47,11 @@ namespace ADPasswordManager.Services
                 return new List<UserPrincipal>();
             }
 
-            if (string.IsNullOrEmpty(_serviceUser) || string.IsNullOrEmpty(_servicePassword))
-            {
-                _logger.LogError("AD Service Account (ServiceUser/ServicePassword) is not configured in appsettings.json.");
-                return new List<UserPrincipal>();
-            }
+            //if (string.IsNullOrEmpty(_serviceUser) || string.IsNullOrEmpty(_servicePassword))
+            //{
+            //    _logger.LogError("AD Service Account (ServiceUser/ServicePassword) is not configured in appsettings.json.");
+            //    return new List<UserPrincipal>();
+            //}
 
             try
             {
@@ -66,7 +66,7 @@ namespace ADPasswordManager.Services
                     try
                     {
                         // Tạo context riêng cho từng OU
-                        using (var context = new PrincipalContext(ContextType.Domain, _domain, ouDN, _serviceUser, _servicePassword))
+                        using (var context = new PrincipalContext(ContextType.Domain, _domain, ouDN))
                         using (var userPrincipalFilter = new UserPrincipal(context))
                         {
                             // Chỉ tìm kiếm trong phạm vi OU này (SearchScope.OneLevel hoặc Subtree tùy bạn)
@@ -147,7 +147,7 @@ namespace ADPasswordManager.Services
 
             try
             {
-                using (var context = new PrincipalContext(ContextType.Domain, _domain, _serviceUser, _servicePassword))
+                using (var context = new PrincipalContext(ContextType.Domain, _domain))
                 {
                     var adminUser = UserPrincipal.FindByIdentity(context, IdentityType.SamAccountName, adminUsername);
                     if (adminUser == null)
@@ -189,7 +189,7 @@ namespace ADPasswordManager.Services
             _logger.LogDebug("Getting status for user '{username}'", username);
             try
             {
-                using (var context = new PrincipalContext(ContextType.Domain, _domain, _serviceUser, _servicePassword))
+                using (var context = new PrincipalContext(ContextType.Domain, _domain))
                 {
                     var user = UserPrincipal.FindByIdentity(context, IdentityType.SamAccountName, username);
                     if (user == null)
@@ -223,7 +223,7 @@ namespace ADPasswordManager.Services
 
             try
             {
-                using (var pContext = new PrincipalContext(ContextType.Domain, _domain, _serviceUser, _servicePassword))
+                using (var pContext = new PrincipalContext(ContextType.Domain, _domain))
                 {
                     var userPrincipal = UserPrincipal.FindByIdentity(pContext, IdentityType.SamAccountName, username);
                     if (userPrincipal == null)
@@ -269,15 +269,15 @@ namespace ADPasswordManager.Services
             _logger.LogDebug("--- Starting GetAllGroupNames ---");
             var groupNames = new List<string>();
 
-            if (string.IsNullOrEmpty(_domain) || string.IsNullOrEmpty(_serviceUser) || string.IsNullOrEmpty(_servicePassword))
-            {
-                _logger.LogError("AD settings (Domain, ServiceUser, ServicePassword) are not fully configured.");
-                return groupNames;
-            }
+            //if (string.IsNullOrEmpty(_domain) || string.IsNullOrEmpty(_serviceUser) || string.IsNullOrEmpty(_servicePassword))
+            //{
+            //    _logger.LogError("AD settings (Domain, ServiceUser, ServicePassword) are not fully configured.");
+            //    return groupNames;
+            //}
 
             try
             {
-                using (var context = new PrincipalContext(ContextType.Domain, _domain, _serviceUser, _servicePassword))
+                using (var context = new PrincipalContext(ContextType.Domain, _domain))
                 {
                     using (var searcher = new PrincipalSearcher(new GroupPrincipal(context)))
                     {
@@ -305,9 +305,9 @@ namespace ADPasswordManager.Services
             _logger.LogWarning("--- Starting GetAllOUs ---");
             var ouList = new List<string>();
 
-            if (string.IsNullOrEmpty(_domain) || string.IsNullOrEmpty(_serviceUser) || string.IsNullOrEmpty(_servicePassword))
+            if (string.IsNullOrEmpty(_domain) )
             {
-                _logger.LogError("AD settings (Domain, ServiceUser, ServicePassword) are not fully configured.");
+                _logger.LogError("AD settings (Domain) are not fully configured.");
                 return ouList;
             }
 
@@ -315,11 +315,11 @@ namespace ADPasswordManager.Services
             {
                 // Sử dụng PrincipalContext với root domain (không cần _serviceOU)
                 _logger.LogInformation("Connecting to domain: {_domain}", _domain);
-                _logger.LogInformation("Using account: {_serviceUser}", _serviceUser);
-                using (var context = new PrincipalContext(ContextType.Domain, _domain, _serviceUser, _servicePassword))
+                //_logger.LogInformation("Using account: {_serviceUser}", _serviceUser);
+                using (var context = new PrincipalContext(ContextType.Domain, _domain))
                 {
                     // Dùng DirectorySearcher để tìm kiếm hiệu quả các OU
-                    using (var de = new DirectoryEntry($"LDAP://{_domain}", _serviceUser, _servicePassword))
+                    using (var de = new DirectoryEntry($"LDAP://{_domain}"))
                     {  
                         using (var searcher = new DirectorySearcher(de))
                         {
@@ -361,7 +361,7 @@ namespace ADPasswordManager.Services
             try
             {
                 // DÙNG selectedOU thay vì _serviceOU
-                using (var pContext = new PrincipalContext(ContextType.Domain, _domain, selectedOU, _serviceUser, _servicePassword))
+                using (var pContext = new PrincipalContext(ContextType.Domain, _domain, selectedOU))
                 {
                     var userPrincipal = UserPrincipal.FindByIdentity(pContext, IdentityType.SamAccountName, username);
                     if (userPrincipal != null)
@@ -410,7 +410,7 @@ namespace ADPasswordManager.Services
 
             try
             {
-                using (var context = new PrincipalContext(ContextType.Domain, _domain, _serviceUser, _servicePassword))
+                using (var context = new PrincipalContext(ContextType.Domain, _domain))
                 {
                     foreach (var username in usernames)
                     {
@@ -451,7 +451,7 @@ namespace ADPasswordManager.Services
         {
             try
             {
-                using (var context = new PrincipalContext(ContextType.Domain, _domain, _serviceUser, _servicePassword))
+                using (var context = new PrincipalContext(ContextType.Domain, _domain))
                 {
                     var user = UserPrincipal.FindByIdentity(context, IdentityType.SamAccountName, username);
                     if (user != null)
@@ -486,7 +486,7 @@ namespace ADPasswordManager.Services
             try
             {
                 // Sử dụng các biến _domain, _serviceUser, _servicePassword đã có
-                using (var context = new PrincipalContext(ContextType.Domain, _domain, _serviceUser, _servicePassword))
+                using (var context = new PrincipalContext(ContextType.Domain, _domain))
                 {
                     var user = UserPrincipal.FindByIdentity(context, IdentityType.SamAccountName, username);
                     if (user != null)
