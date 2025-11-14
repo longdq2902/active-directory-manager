@@ -31,8 +31,9 @@ namespace ADPasswordManager.Areas.Identity.Pages.Account
         private readonly SignInManager<IdentityUser> _signInManager;
         private readonly ILogger<LoginModel> _logger;
         private readonly ADAuthenticationService adAuthService;
-        private readonly IConfiguration _configuration; // <-- Thêm IConfiguration
+        private readonly IConfiguration _configuration; 
         private readonly ApplicationDbContext _context;
+        private readonly bool _useAppPoolIdentity;
 
         public LoginModel(SignInManager<IdentityUser> signInManager,
             ILogger<LoginModel> logger,
@@ -46,6 +47,7 @@ namespace ADPasswordManager.Areas.Identity.Pages.Account
             this.adAuthService = adAuthService;
             _configuration = configuration; // <-- Gán giá trị
             _context = context;
+            _useAppPoolIdentity = _configuration.GetValue<bool>("ADSettings:UseAppPoolIdentity"); // <-- THÊM DÒNG NÀY
         }
 
         [BindProperty]
@@ -87,6 +89,150 @@ namespace ADPasswordManager.Areas.Identity.Pages.Account
             ReturnUrl = returnUrl;
         }
 
+        //public async Task<IActionResult> OnPostAsync(string returnUrl = null)
+        //{
+        //    returnUrl ??= Url.Content("~/");
+        //    _logger.LogInformation("returnUrl: {returnUrl}", returnUrl);
+
+        //    ExternalLogins = (await _signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
+
+        //    if (ModelState.IsValid)
+        //    {
+        //        if (adAuthService.IsValid(Input.Email, Input.Password))
+        //        {
+        //            var user = await _userManager.FindByNameAsync(Input.Email);
+        //            if (user == null)
+        //            {
+        //                user = new IdentityUser { UserName = Input.Email, Email = Input.Email, EmailConfirmed = true };
+        //                var result = await _userManager.CreateAsync(user);
+        //                if (!result.Succeeded)
+        //                {
+        //                    ModelState.AddModelError(string.Empty, "Could not create local user account.");
+        //                    return Page();
+        //                }
+        //            }
+
+        //            // --- BẮT ĐẦU LOGIC GÁN VAI TRÒ (ĐÃ SỬA) ---
+
+        //            // Xóa các claim vai trò cũ (nếu có) để đảm bảo sạch sẽ
+        //            var existingClaims = await _userManager.GetClaimsAsync(user);
+        //            await _userManager.RemoveClaimsAsync(user, existingClaims);
+
+        //            Claim newRoleClaim = null; // Khởi tạo là null
+        //            bool isSuperAdmin = false;
+        //            bool isDelegatedAdmin = false;
+
+        //            // Lấy thông tin tài khoản dịch vụ
+        //            string serviceUser = _configuration.GetValue<string>("ADSettings:ServiceUser");
+        //            string servicePassword = _configuration.GetValue<string>("ADSettings:ServicePassword");
+        //            string domain = _configuration.GetValue<string>("ADSettings:Domain");
+
+        //            try
+        //            {
+        //                using (var pc = new PrincipalContext(ContextType.Domain, domain, serviceUser, servicePassword))
+        //                {
+        //                    var userPrincipal = UserPrincipal.FindByIdentity(pc, IdentityType.SamAccountName, Input.Email);
+        //                    if (userPrincipal != null)
+        //                    {
+        //                        // 1. Kiểm tra SuperAdmin
+        //                        string superAdminGroup = _configuration.GetValue<string>("ADSettings:SuperAdminGroup");
+        //                        if (!string.IsNullOrEmpty(superAdminGroup))
+        //                        {
+        //                            var groupPrincipal = GroupPrincipal.FindByIdentity(pc, superAdminGroup);
+        //                            if (groupPrincipal != null && userPrincipal.IsMemberOf(groupPrincipal))
+        //                            {
+        //                                isSuperAdmin = true;
+        //                            }
+        //                        }
+
+        //                        // 2. Nếu không phải SuperAdmin, kiểm tra DelegatedAdmin
+        //                        if (!isSuperAdmin)
+        //                        {
+        //                            // Lấy danh sách *tất cả* các nhóm admin từ DB
+        //                            var allAdminGroups = _context.DelegationRules.Select(r => r.AdminGroup).Distinct().ToList();
+
+        //                            foreach (var adminGroupName in allAdminGroups)
+        //                            {
+        //                                var delegGroup = GroupPrincipal.FindByIdentity(pc, adminGroupName);
+        //                                if (delegGroup != null && userPrincipal.IsMemberOf(delegGroup))
+        //                                {
+        //                                    isDelegatedAdmin = true;
+        //                                    break; // Chỉ cần thuộc 1 nhóm là đủ
+        //                                }
+        //                            }
+        //                        }
+        //                    }
+        //                }
+        //            }
+        //            catch (Exception ex)
+        //            {
+        //                _logger.LogError(ex, "Error checking group membership for user {user}", Input.Email);
+        //                ModelState.AddModelError(string.Empty, "Error verifying user roles.");
+        //                return Page();
+        //            }
+
+        //            // 3. Gán vai trò dựa trên kết quả kiểm tra
+        //            if (isSuperAdmin)
+        //            {
+        //                newRoleClaim = new Claim(ClaimTypes.Role, Roles.SuperAdmin);
+        //                await _userManager.AddClaimAsync(user, newRoleClaim);
+        //                await _signInManager.SignInWithClaimsAsync(user, isPersistent: false, new[] { newRoleClaim });
+
+        //                _logger.LogInformation("User {user} logged in with role {role}.", user.UserName, newRoleClaim.Value);
+        //                return RedirectToAction("Index", "SuperAdmin");
+        //            }
+        //            else if (isDelegatedAdmin)
+        //            {
+        //                newRoleClaim = new Claim(ClaimTypes.Role, Roles.DelegatedAdmin);
+        //                await _userManager.AddClaimAsync(user, newRoleClaim);
+        //                await _signInManager.SignInWithClaimsAsync(user, isPersistent: false, new[] { newRoleClaim });
+
+        //                _logger.LogInformation("User {user} logged in with role {role}.", user.UserName, newRoleClaim.Value);
+        //                return RedirectToAction("Index", "Management");
+        //            }
+        //            else
+        //            {
+        //                // Đây là "Regular User". Họ đăng nhập thành công, nhưng không có vai trò.
+        //                await _signInManager.SignInAsync(user, isPersistent: false);
+        //                _logger.LogInformation("User {user} logged in, but has no assigned role in this application.", user.UserName);
+
+        //                // Chuyển hướng họ đến trang "Access Denied".
+        //                return RedirectToAction("AccessDenied", "Home");
+        //            }
+        //            // --- KẾT THÚC LOGIC GÁN VAI TRÒ (ĐÃ SỬA) ---
+
+        //            _logger.LogInformation("User {user} logged in with role {role}.", user.UserName, newRoleClaim.Value);
+        //            _logger.LogDebug("User {user} logged in with role {role}.", user.UserName, newRoleClaim.Value);
+
+        //            // Kiểm tra xem người dùng có đang cố truy cập một trang cụ thể không
+        //            if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl) && returnUrl != "/")
+        //            {
+        //                // Nếu có, chuyển hướng họ đến trang đó
+        //                return LocalRedirect(returnUrl);
+        //            }
+        //            else
+        //            {
+        //                // Nếu không, chuyển hướng dựa trên vai trò
+        //                if (newRoleClaim.Value == Roles.SuperAdmin)
+        //                {
+        //                    return RedirectToAction("Index", "SuperAdmin");
+        //                }
+        //                else
+        //                {
+        //                    return RedirectToAction("Index", "Management");
+        //                }
+        //            }
+        //        }
+        //        else
+        //        {
+        //            ModelState.AddModelError(string.Empty, "Invalid login attempt.");
+        //            return Page();
+        //        }
+        //    }
+
+        //    return Page();
+        //}
+
         public async Task<IActionResult> OnPostAsync(string returnUrl = null)
         {
             returnUrl ??= Url.Content("~/");
@@ -120,15 +266,34 @@ namespace ADPasswordManager.Areas.Identity.Pages.Account
                     bool isSuperAdmin = false;
                     bool isDelegatedAdmin = false;
 
-                    // Lấy thông tin tài khoản dịch vụ
-                    string serviceUser = _configuration.GetValue<string>("ADSettings:ServiceUser");
-                    string servicePassword = _configuration.GetValue<string>("ADSettings:ServicePassword");
+                    // Lấy domain
                     string domain = _configuration.GetValue<string>("ADSettings:Domain");
 
                     try
                     {
-                        using (var pc = new PrincipalContext(ContextType.Domain, domain, serviceUser, servicePassword))
+                        // --- BẮT ĐẦU THAY ĐỔI ---
+                        // Quyết định cách tạo PrincipalContext dựa trên cờ cấu hình
+                        PrincipalContext pc;
+                        if (_useAppPoolIdentity)
                         {
+                            _logger.LogDebug("Login: Checking group membership using Application Pool Identity.");
+                            pc = new PrincipalContext(ContextType.Domain, domain);
+                        }
+                        else
+                        {
+                            _logger.LogDebug("Login: Checking group membership using Service Account.");
+                            string serviceUser = _configuration.GetValue<string>("ADSettings:ServiceUser");
+                            string servicePassword = _configuration.GetValue<string>("ADSettings:ServicePassword");
+
+                            // Giả định: Nếu UseAppPoolIdentity = false, thì ServiceUser/Password phải được cấu hình.
+                            // (Chúng ta đã thêm logic kiểm tra việc này trong constructor của ADManagementService)
+                            pc = new PrincipalContext(ContextType.Domain, domain, serviceUser, servicePassword);
+                        }
+
+                        using (pc) // Khối 'using' bắt đầu ở đây
+                        {
+                            // --- KẾT THÚC THAY ĐỔI ---
+
                             var userPrincipal = UserPrincipal.FindByIdentity(pc, IdentityType.SamAccountName, Input.Email);
                             if (userPrincipal != null)
                             {
@@ -160,7 +325,7 @@ namespace ADPasswordManager.Areas.Identity.Pages.Account
                                     }
                                 }
                             }
-                        }
+                        } // Khối 'using' của 'pc' kết thúc ở đây
                     }
                     catch (Exception ex)
                     {
@@ -199,6 +364,12 @@ namespace ADPasswordManager.Areas.Identity.Pages.Account
                     }
                     // --- KẾT THÚC LOGIC GÁN VAI TRÒ (ĐÃ SỬA) ---
 
+                    /* * Lưu ý: Đoạn code logic redirect bên dưới (sau khi logic gán vai trò kết thúc)
+                     * trong file gốc của bạn không thể truy cập được (unreachable code)
+                     * vì tất cả các nhánh (if/else if/else) ở trên đều đã return.
+                     * Tôi sẽ giữ nguyên logic này để khớp với file gốc.
+                     */
+#pragma warning disable CS0162 // Unreachable code detected
                     _logger.LogInformation("User {user} logged in with role {role}.", user.UserName, newRoleClaim.Value);
                     _logger.LogDebug("User {user} logged in with role {role}.", user.UserName, newRoleClaim.Value);
 
@@ -220,6 +391,7 @@ namespace ADPasswordManager.Areas.Identity.Pages.Account
                             return RedirectToAction("Index", "Management");
                         }
                     }
+#pragma warning restore CS0162 // Unreachable code detected
                 }
                 else
                 {

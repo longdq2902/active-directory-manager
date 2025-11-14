@@ -18,6 +18,10 @@ namespace ADPasswordManager.Services
         private readonly string _serviceOU;
         private readonly string _domainController;
 
+        private readonly bool _useAppPoolIdentity;
+        private readonly string _serviceUser;
+        private readonly string _servicePassword;
+
         // Cập nhật Constructor để nhận ApplicationDbContext
         public ADManagementService(ILogger<ADManagementService> logger, IConfiguration configuration, ApplicationDbContext context)
         {
@@ -26,13 +30,61 @@ namespace ADPasswordManager.Services
 
             // Các cấu hình AD vẫn đọc từ appsettings.json
             _domain = configuration.GetValue<string>("ADSettings:Domain") ?? string.Empty;
-            //_serviceUser = configuration.GetValue<string>("ADSettings:ServiceUser") ?? string.Empty;
-            //_servicePassword = configuration.GetValue<string>("ADSettings:ServicePassword") ?? string.Empty;
             _serviceOU = configuration.GetValue<string>("ADSettings:ServiceOU") ?? string.Empty;
             _domainController = configuration.GetValue<string>("ADSettings:DomainController") ?? string.Empty;
+
+            // --- BẮT ĐẦU SỬA ---
+            _useAppPoolIdentity = configuration.GetValue<bool>("ADSettings:UseAppPoolIdentity");
+
+            if (!_useAppPoolIdentity)
+            {
+                // Chỉ đọc ServiceUser/Password nếu không dùng AppPool
+                _serviceUser = configuration.GetValue<string>("ADSettings:ServiceUser") ?? string.Empty;
+                _servicePassword = configuration.GetValue<string>("ADSettings:ServicePassword") ?? string.Empty;
+
+                if (string.IsNullOrEmpty(_serviceUser) || string.IsNullOrEmpty(_servicePassword))
+                {
+                    _logger.LogCritical("ADSettings:UseAppPoolIdentity is set to 'false' but ServiceUser or ServicePassword is not configured. All AD operations will fail.");
+                    // Ném ra lỗi để ứng dụng dừng lại thay vì chạy sai
+                    throw new InvalidOperationException("Service account credentials are required when UseAppPoolIdentity is false.");
+                }
+            }
+            else
+            {
+                // Đảm bảo các biến này rỗng nếu dùng AppPool
+                _serviceUser = string.Empty;
+                _servicePassword = string.Empty;
+            }
+            // --- KẾT THÚC SỬA ---
         }
 
-        // Sửa đổi hoàn toàn hàm này
+
+        // --- THÊM HÀM MỚI NÀY ---
+        [SupportedOSPlatform("windows")]
+        private PrincipalContext GetPrincipalContext(string? ouDN = null)
+        {
+            string? container = string.IsNullOrEmpty(ouDN) ? _serviceOU : ouDN;
+
+            if (_useAppPoolIdentity)
+            {
+                _logger.LogDebug("Connecting to AD using Application Pool Identity. Domain: {Domain}, Container: {Container}", _domain, container);
+                if (string.IsNullOrEmpty(container))
+                {
+                    return new PrincipalContext(ContextType.Domain, _domain);
+                }
+                return new PrincipalContext(ContextType.Domain, _domain, container);
+            }
+            else
+            {
+                _logger.LogDebug("Connecting to AD using Service Account: {ServiceUser}. Domain: {Domain}, Container: {Container}", _serviceUser, _domain, container);
+                if (string.IsNullOrEmpty(container))
+                {
+                    return new PrincipalContext(ContextType.Domain, _domain, _serviceUser, _servicePassword);
+                }
+                return new PrincipalContext(ContextType.Domain, _domain, container, _serviceUser, _servicePassword);
+            }
+        }
+
         [SupportedOSPlatform("windows")]
         public List<UserPrincipal> GetManagedUsersForAdmin(string adminUsername, string selectedOU = null, string searchTerm = null)
         {
@@ -65,8 +117,7 @@ namespace ADPasswordManager.Services
                 {
                     try
                     {
-                        // Tạo context riêng cho từng OU
-                        using (var context = new PrincipalContext(ContextType.Domain, _domain, ouDN))
+                        using (var context = GetPrincipalContext(ouDN))
                         using (var userPrincipalFilter = new UserPrincipal(context))
                         {
                             // Chỉ tìm kiếm trong phạm vi OU này (SearchScope.OneLevel hoặc Subtree tùy bạn)
@@ -147,7 +198,7 @@ namespace ADPasswordManager.Services
 
             try
             {
-                using (var context = new PrincipalContext(ContextType.Domain, _domain))
+                using (var context = GetPrincipalContext())
                 {
                     var adminUser = UserPrincipal.FindByIdentity(context, IdentityType.SamAccountName, adminUsername);
                     if (adminUser == null)
@@ -189,7 +240,7 @@ namespace ADPasswordManager.Services
             _logger.LogDebug("Getting status for user '{username}'", username);
             try
             {
-                using (var context = new PrincipalContext(ContextType.Domain, _domain))
+                using (var context = GetPrincipalContext())
                 {
                     var user = UserPrincipal.FindByIdentity(context, IdentityType.SamAccountName, username);
                     if (user == null)
@@ -223,7 +274,7 @@ namespace ADPasswordManager.Services
 
             try
             {
-                using (var pContext = new PrincipalContext(ContextType.Domain, _domain))
+                using (var pContext = GetPrincipalContext())
                 {
                     var userPrincipal = UserPrincipal.FindByIdentity(pContext, IdentityType.SamAccountName, username);
                     if (userPrincipal == null)
@@ -269,15 +320,9 @@ namespace ADPasswordManager.Services
             _logger.LogDebug("--- Starting GetAllGroupNames ---");
             var groupNames = new List<string>();
 
-            //if (string.IsNullOrEmpty(_domain) || string.IsNullOrEmpty(_serviceUser) || string.IsNullOrEmpty(_servicePassword))
-            //{
-            //    _logger.LogError("AD settings (Domain, ServiceUser, ServicePassword) are not fully configured.");
-            //    return groupNames;
-            //}
-
             try
             {
-                using (var context = new PrincipalContext(ContextType.Domain, _domain))
+                using (var context = GetPrincipalContext())
                 {
                     using (var searcher = new PrincipalSearcher(new GroupPrincipal(context)))
                     {
@@ -300,12 +345,66 @@ namespace ADPasswordManager.Services
             return groupNames.OrderBy(name => name).ToList();
         }
 
+        //public List<string> GetAllOUs()
+        //{
+        //    _logger.LogWarning("--- Starting GetAllOUs ---");
+        //    var ouList = new List<string>();
+
+        //    if (string.IsNullOrEmpty(_domain) )
+        //    {
+        //        _logger.LogError("AD settings (Domain) are not fully configured.");
+        //        return ouList;
+        //    }
+
+        //    try
+        //    {
+        //        // Sử dụng PrincipalContext với root domain (không cần _serviceOU)
+        //        _logger.LogInformation("Connecting to domain: {_domain}", _domain);
+        //        //_logger.LogInformation("Using account: {_serviceUser}", _serviceUser);
+        //        using (var context = new PrincipalContext(ContextType.Domain, _domain))
+        //        {
+        //            // Dùng DirectorySearcher để tìm kiếm hiệu quả các OU
+        //            using (var de = new DirectoryEntry($"LDAP://{_domain}"))
+        //            {  
+        //                using (var searcher = new DirectorySearcher(de))
+        //                {
+        //                    //searcher.Filter = "(objectCategory=organizationalUnit)";
+        //                    searcher.Filter = "(&(objectCategory=organizationalUnit)(!(cn=Builtin))(!(cn=Users)))";
+        //                    searcher.SearchScope = SearchScope.Subtree;
+        //                    searcher.PropertiesToLoad.Add("distinguishedName");
+
+        //                    var searchResults = searcher.FindAll();
+        //                    _logger.LogInformation("LDAP query found {OuCount} Organizational Units.", searchResults.Count);
+
+        //                    foreach (SearchResult result in searchResults)
+        //                    {
+
+        //                        if (result.Properties.Contains("distinguishedName"))
+        //                        {
+        //                            _logger.LogInformation((string)result.Properties["distinguishedName"][0]);
+        //                            ouList.Add((string)result.Properties["distinguishedName"][0]);
+        //                        }
+        //                    }
+        //                    _logger.LogInformation("ouList: " + ouList.First());
+        //                }
+        //            }
+        //        }
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        _logger.LogError(ex, "An error occurred while getting all OUs from AD.");
+        //    }
+
+        //    _logger.LogDebug("--- Finished GetAllOUs. Found {count} OUs. ---", ouList.Count);
+        //    return ouList.OrderBy(name => name).ToList();
+        //}
         public List<string> GetAllOUs()
         {
             _logger.LogWarning("--- Starting GetAllOUs ---");
             var ouList = new List<string>();
+            string ldapPath = $"LDAP://{_domain}";
 
-            if (string.IsNullOrEmpty(_domain) )
+            if (string.IsNullOrEmpty(_domain))
             {
                 _logger.LogError("AD settings (Domain) are not fully configured.");
                 return ouList;
@@ -313,37 +412,49 @@ namespace ADPasswordManager.Services
 
             try
             {
-                // Sử dụng PrincipalContext với root domain (không cần _serviceOU)
                 _logger.LogInformation("Connecting to domain: {_domain}", _domain);
-                //_logger.LogInformation("Using account: {_serviceUser}", _serviceUser);
-                using (var context = new PrincipalContext(ContextType.Domain, _domain))
+
+                // --- BẮT ĐẦU SỬA ---
+
+                // Quyết định cách tạo DirectoryEntry dựa trên cấu hình
+                DirectoryEntry de;
+                if (_useAppPoolIdentity)
+                {
+                    _logger.LogDebug("GetAllOUs: Connecting to {ldapPath} using Application Pool Identity.", ldapPath);
+                    de = new DirectoryEntry(ldapPath);
+                }
+                else
+                {
+                    // Giả định: _serviceUser và _servicePassword đã được nạp trong constructor
+                    _logger.LogDebug("GetAllOUs: Connecting to {ldapPath} using service account {user}.", ldapPath, _serviceUser);
+                    // Dùng constructor có 3 tham số (path, username, password)
+                    de = new DirectoryEntry(ldapPath, _serviceUser, _servicePassword);
+                }
+
+                using (de) // Đưa de vào khối using
                 {
                     // Dùng DirectorySearcher để tìm kiếm hiệu quả các OU
-                    using (var de = new DirectoryEntry($"LDAP://{_domain}"))
-                    {  
-                        using (var searcher = new DirectorySearcher(de))
+                    using (var searcher = new DirectorySearcher(de))
+                    {
+                        // Lọc bỏ các container mặc định như 'Builtin' và 'Users'
+                        searcher.Filter = "(&(objectCategory=organizationalUnit)(!(cn=Builtin))(!(cn=Users)))";
+                        searcher.SearchScope = SearchScope.Subtree;
+                        searcher.PropertiesToLoad.Add("distinguishedName");
+
+                        // Lệnh FindAll() sẽ thực thi truy vấn
+                        var searchResults = searcher.FindAll();
+                        _logger.LogInformation("LDAP query found {OuCount} Organizational Units.", searchResults.Count);
+
+                        foreach (SearchResult result in searchResults)
                         {
-                            //searcher.Filter = "(objectCategory=organizationalUnit)";
-                            searcher.Filter = "(&(objectCategory=organizationalUnit)(!(cn=Builtin))(!(cn=Users)))";
-                            searcher.SearchScope = SearchScope.Subtree;
-                            searcher.PropertiesToLoad.Add("distinguishedName");
-
-                            var searchResults = searcher.FindAll();
-                            _logger.LogInformation("LDAP query found {OuCount} Organizational Units.", searchResults.Count);
-
-                            foreach (SearchResult result in searchResults)
+                            if (result.Properties.Contains("distinguishedName"))
                             {
-                               
-                                if (result.Properties.Contains("distinguishedName"))
-                                {
-                                    _logger.LogInformation((string)result.Properties["distinguishedName"][0]);
-                                    ouList.Add((string)result.Properties["distinguishedName"][0]);
-                                }
+                                ouList.Add((string)result.Properties["distinguishedName"][0]);
                             }
-                            _logger.LogInformation("ouList: " + ouList.First());
                         }
                     }
                 }
+                // --- KẾT THÚC SỬA ---
             }
             catch (Exception ex)
             {
@@ -361,7 +472,7 @@ namespace ADPasswordManager.Services
             try
             {
                 // DÙNG selectedOU thay vì _serviceOU
-                using (var pContext = new PrincipalContext(ContextType.Domain, _domain, selectedOU))
+                using (var pContext = GetPrincipalContext(selectedOU))
                 {
                     var userPrincipal = UserPrincipal.FindByIdentity(pContext, IdentityType.SamAccountName, username);
                     if (userPrincipal != null)
@@ -410,7 +521,7 @@ namespace ADPasswordManager.Services
 
             try
             {
-                using (var context = new PrincipalContext(ContextType.Domain, _domain))
+                using (var context = GetPrincipalContext())
                 {
                     foreach (var username in usernames)
                     {
@@ -451,7 +562,7 @@ namespace ADPasswordManager.Services
         {
             try
             {
-                using (var context = new PrincipalContext(ContextType.Domain, _domain))
+                using (var context = GetPrincipalContext())
                 {
                     var user = UserPrincipal.FindByIdentity(context, IdentityType.SamAccountName, username);
                     if (user != null)
@@ -486,7 +597,7 @@ namespace ADPasswordManager.Services
             try
             {
                 // Sử dụng các biến _domain, _serviceUser, _servicePassword đã có
-                using (var context = new PrincipalContext(ContextType.Domain, _domain))
+                using (var context = GetPrincipalContext())
                 {
                     var user = UserPrincipal.FindByIdentity(context, IdentityType.SamAccountName, username);
                     if (user != null)
