@@ -162,7 +162,8 @@ namespace ADPasswordManager.Controllers
             {
                 Username = userStatus.Username,
                 SetPasswordNeverExpires = userStatus.IsPasswordNeverExpires,
-                RequirePasswordChangeOnLogon = userStatus.IsPasswordChangeRequired
+                RequirePasswordChangeOnLogon = userStatus.IsPasswordChangeRequired,
+                PasswordPolicyRules = GetPasswordPolicyRules()
             };
 
             return View(model);
@@ -207,7 +208,8 @@ namespace ADPasswordManager.Controllers
                 // Gọi service để lấy danh sách OU
                 AvailableOUs = _adManagementService.GetAllOUs()
                          .Select(ou => new SelectListItem { Text = ou, Value = ou })
-                         .ToList()
+                         .ToList(),
+                PasswordPolicyRules = GetPasswordPolicyRules()
             };
             return View(model);
         }
@@ -266,6 +268,7 @@ namespace ADPasswordManager.Controllers
                 model.AvailableOUs = _adManagementService.GetAllOUs()
                             .Select(ou => new SelectListItem { Text = ou, Value = ou })
                             .ToList();
+                model.PasswordPolicyRules = GetPasswordPolicyRules();
 
             }
             return View(model);
@@ -492,6 +495,21 @@ namespace ADPasswordManager.Controllers
             string conStr = $"Server={instanceName};Database={sqlDb};User Id={sqlUser};Password={sqlPass};TrustServerCertificate=True;";
             _logger.LogWarning("conStr:" + conStr);
             return conStr;
+        }
+
+        private List<string> GetPasswordPolicyRules()
+        {
+            var policyString = _configuration["PasswordPolicy:Rules"];
+            if (string.IsNullOrWhiteSpace(policyString))
+            {
+                return new List<string>(); // Trả về danh sách rỗng nếu không cấu hình
+            }
+
+            // Tách chuỗi bằng dấu ';', loại bỏ khoảng trắng thừa và các mục rỗng
+            return policyString.Split(';')
+                               .Select(rule => rule.Trim())
+                               .Where(rule => !string.IsNullOrEmpty(rule))
+                               .ToList();
         }
 
         // code thêm vào trước chỗ này

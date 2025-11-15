@@ -16,15 +16,18 @@ namespace ADPasswordManager.Controllers
         private readonly ApplicationDbContext _context;
         private readonly ADManagementService _adService;
         private readonly ILogger<PublicResetController> _logger;
+        private readonly IConfiguration _configuration;
 
         public PublicResetController(
             ApplicationDbContext context,
             ADManagementService adService,
-            ILogger<PublicResetController> logger)
+            ILogger<PublicResetController> logger,
+            IConfiguration configuration)
         {
             _context = context;
             _adService = adService;
             _logger = logger;
+            _configuration = configuration;
         }
 
         // Bước 1: Hiển thị form reset
@@ -48,7 +51,8 @@ namespace ADPasswordManager.Controllers
             var model = new PublicResetViewModel
             {
                 Token = token,
-                Username = tokenRecord.Username
+                Username = tokenRecord.Username,
+                PasswordPolicyRules = GetPasswordPolicyRules()
             };
 
             return View(model);
@@ -65,6 +69,7 @@ namespace ADPasswordManager.Controllers
             if (!ModelState.IsValid)
             {
                 return View(model); // Trả về form nếu validation lỗi (ví dụ: pass không khớp)
+                model.PasswordPolicyRules = GetPasswordPolicyRules();
             }
 
             var tokenRecord = await ValidateToken(model.Token);
@@ -105,7 +110,8 @@ namespace ADPasswordManager.Controllers
             {
                 _logger.LogError(ex, $"Error while '{model.Username}' was self-resetting password.");
                 // Lỗi từ AD (ví dụ: mật khẩu không đủ phức tạp)
-                ModelState.AddModelError(string.Empty, "Password reset failed. " + ex.Message); 
+                ModelState.AddModelError(string.Empty, "Password reset failed. " + ex.Message);
+                model.PasswordPolicyRules = GetPasswordPolicyRules();
                 return View(model);
             }
         }
@@ -128,6 +134,20 @@ namespace ADPasswordManager.Controllers
             }
 
             return tokenRecord;
+        }
+
+        private List<string> GetPasswordPolicyRules()
+        {
+            var policyString = _configuration["PasswordPolicy:Rules"];
+            if (string.IsNullOrWhiteSpace(policyString))
+            {
+                return new List<string>();
+            }
+
+            return policyString.Split(';')
+                               .Select(rule => rule.Trim())
+                               .Where(rule => !string.IsNullOrEmpty(rule))
+                               .ToList();
         }
     }
 }

@@ -24,5 +24,6 @@ namespace ADPasswordManager.Models.ViewModels
 
         [Display(Name = "User must change password at next logon")]
         public bool RequirePasswordChangeOnLogon { get; set; }
+        public List<string> PasswordPolicyRules { get; set; } = new List<string>();
     }
 }

@@ -19,5 +19,6 @@ namespace ADPasswordManager.Models.ViewModels
         [Display(Name = "Confirm New Password")] 
         [Compare("NewPassword", ErrorMessage = "The new password and confirmation password do not match.")] 
         public string ConfirmPassword { get; set; }
+        public List<string> PasswordPolicyRules { get; set; } = new List<string>();
     }
 }
