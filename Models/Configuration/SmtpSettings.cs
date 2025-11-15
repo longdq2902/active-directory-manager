@@ -8,5 +8,6 @@
         public string SenderEmail { get; set; }
         public string SmtpUser { get; set; }
         public string SmtpPass { get; set; }
+        public string SecurityProtocol { get; set; }
     }
 }

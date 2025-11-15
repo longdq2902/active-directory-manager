@@ -30,9 +30,36 @@ namespace ADPasswordManager.Services
 
             using var smtp = new SmtpClient();
 
-            // Kết nối tới server SMTP
-            await smtp.ConnectAsync(_smtpSettings.SmtpServer, _smtpSettings.SmtpPort, SecureSocketOptions.StartTls);
+            var secureSocketOptions = SecureSocketOptions.Auto; // Mặc định là Auto
+            if (!string.IsNullOrEmpty(_smtpSettings.SecurityProtocol))
+            {
+                // Dùng switch để dễ dàng mở rộng
+                switch (_smtpSettings.SecurityProtocol.ToLower())
+                {
+                    case "ssl":
+                    case "ssl_tls":
+                    case "sslonconnect":
+                        secureSocketOptions = SecureSocketOptions.SslOnConnect;
+                        break;
+                    case "starttls":
+                        secureSocketOptions = SecureSocketOptions.StartTls;
+                        break;
+                    case "starttlswhenavailable":
+                        secureSocketOptions = SecureSocketOptions.StartTlsWhenAvailable;
+                        break;
+                    case "auto":
+                    default:
+                        secureSocketOptions = SecureSocketOptions.Auto;
+                        break;
+                }
+            }
 
+            //// Kết nối tới server SMTP
+            //await smtp.ConnectAsync(_smtpSettings.SmtpServer, _smtpSettings.SmtpPort, SecureSocketOptions.StartTls);
+            //// Kết nối tới server SMTP
+            //await smtp.ConnectAsync(_smtpSettings.SmtpServer, _smtpSettings.SmtpPort, SecureSocketOptions.SslOnConnect);
+
+            await smtp.ConnectAsync(_smtpSettings.SmtpServer, _smtpSettings.SmtpPort, secureSocketOptions);
             // Xác thực (nếu có user/pass)
             await smtp.AuthenticateAsync(_smtpSettings.SmtpUser, _smtpSettings.SmtpPass);
 
