@@ -268,7 +268,7 @@ namespace ADPasswordManager.Services
             }
         }
 
-        public bool ResetUserPassword(string username, string newPassword, bool setNeverExpires, bool requireChange)
+        public void ResetUserPassword(string username, string newPassword, bool setNeverExpires, bool requireChange)
         {
             _logger.LogInformation("Attempting to reset password for user '{username}' with options: SetNeverExpires={setNeverExpires}, RequireChange={requireChange}", username, setNeverExpires, requireChange);
 
@@ -280,7 +280,7 @@ namespace ADPasswordManager.Services
                     if (userPrincipal == null)
                     {
                         _logger.LogWarning("User '{username}' not found. Password reset failed.", username);
-                        return false;
+                        throw new Exception($"User '{username}' not found.");
                     }
 
                     userPrincipal.SetPassword(newPassword);
@@ -301,13 +301,13 @@ namespace ADPasswordManager.Services
                     userPrincipal.Save();
                     _logger.LogInformation("Successfully saved all changes for user '{username}'.", username);
 
-                    return true;
+                    
                 }
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "An error occurred while resetting password for '{username}'", username);
-                return false;
+                throw new Exception($"Error resetting the password for '{username}'. Details: {ex.Message}", ex);
             }
         }
 
@@ -466,7 +466,7 @@ namespace ADPasswordManager.Services
         }
 
         // Sửa lại phương thức CreateUser
-        public bool CreateUser(string username, string email, string firstName, string lastName, string password, string selectedOU, bool requireChange, bool neverExpires) // Thêm tham số selectedOU
+        public void CreateUser(string username, string email, string firstName, string lastName, string password, string selectedOU, bool requireChange, bool neverExpires) // Thêm tham số selectedOU
         {
             _logger.LogInformation("Attempting to create user '{username}' in OU: {ou}", username, selectedOU);
             try
@@ -478,7 +478,7 @@ namespace ADPasswordManager.Services
                     if (userPrincipal != null)
                     {
                         _logger.LogWarning("User '{username}' already exists in this context. Create user failed.", username);
-                        return false;
+                        throw new Exception($"User '{username}' already exists in this context. Create user failed..");
                     }
 
                     using (UserPrincipal user = new UserPrincipal(pContext))
@@ -501,14 +501,15 @@ namespace ADPasswordManager.Services
                     ;
 
                     _logger.LogInformation("Successfully created user '{username}' in OU '{ou}'", username, selectedOU);
-                    return true;
+                    //return true;
                 }
             }
             catch (Exception ex)
             {
                 // Sửa lại thông báo log cho đúng ngữ cảnh
                 _logger.LogError(ex, "An error occurred while creating user '{username}'", username);
-                return false;
+                throw new Exception($"Error creating user '{username}'. Details: {ex.Message}", ex);
+                //return false;
             }
         }
 

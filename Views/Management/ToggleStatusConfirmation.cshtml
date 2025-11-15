@@ -29,7 +29,7 @@ string actionColor = isEnabled ? "bg-red-600 hover:bg-red-700" : "bg-green-600 h
 
     @if (!ViewData.ModelState.IsValid)
     {
-        <div class="mt-4 p-3 bg-red-50 border border-red-200 text-red-700 text-sm rounded-md">
+        <div class="mb-4 p-3 bg-red-100 border bg-red-50 border-red-500 text-red-800 rounded-md whitespace-pre-wrap font-mono text-sm">
             @Html.ValidationSummary(false, "", new { @class = "list-disc list-inside" })
         </div>
     }

@@ -7,14 +7,14 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration; 
-using System.Collections.Generic; 
+using Microsoft.Extensions.Configuration;
+using System.Collections.Generic;
 using System.DirectoryServices;
 using System.DirectoryServices.AccountManagement;
 using System.Linq;
 using System.Runtime.Versioning;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Options; 
+using Microsoft.Extensions.Options;
 
 namespace ADPasswordManager.Controllers
 {
@@ -28,9 +28,9 @@ namespace ADPasswordManager.Controllers
         private readonly ApplicationDbContext _context;
         private readonly ISqlManagementService _sqlService;
         private readonly IConfiguration _configuration;
-        private readonly FeatureSettings _featureSettings; 
+        private readonly FeatureSettings _featureSettings;
 
-        public ManagementController(ILogger<ManagementController> logger, ADManagementService adManagementService, 
+        public ManagementController(ILogger<ManagementController> logger, ADManagementService adManagementService,
             IPasswordResetService passwordResetService, ApplicationDbContext context,
             ISqlManagementService sqlService, IConfiguration configuration, IOptions<FeatureSettings> featureSettings)
         {
@@ -43,7 +43,7 @@ namespace ADPasswordManager.Controllers
             _featureSettings = featureSettings.Value;
         }
 
-    public async Task<IActionResult> Index(string? selectedOU, string? searchTerm)
+        public async Task<IActionResult> Index(string? selectedOU, string? searchTerm)
         {
             var adminUsername = User.Identity?.Name;
             if (string.IsNullOrEmpty(adminUsername))
@@ -51,7 +51,7 @@ namespace ADPasswordManager.Controllers
                 return Challenge(); // Hoặc redirect tới trang login
             }
 
-            
+
             var managedOUs = _adManagementService.GetManagedOUNamesForAdmin(adminUsername);
 
             //tim sql mapping
@@ -78,7 +78,7 @@ namespace ADPasswordManager.Controllers
             // Map UserPrincipal sang UserViewModel (giữ nguyên)
             var userViewModels = new List<UserViewModel>();
 
-  
+
             foreach (var user in users)
             {
                 bool hasSqlAccess = false;
@@ -136,7 +136,7 @@ namespace ADPasswordManager.Controllers
                 EnableCreateUser = _featureSettings.EnableCreateUser,
                 EnableDeleteUser = _featureSettings.EnableDeleteUser,
                 EnableSendPasswordResetLink = _featureSettings.EnableSendPasswordResetLink,
-                EnableSqlAccessToggle = _featureSettings.EnableSqlAccessToggle 
+                EnableSqlAccessToggle = _featureSettings.EnableSqlAccessToggle
 
             };
 
@@ -176,26 +176,31 @@ namespace ADPasswordManager.Controllers
         {
             if (ModelState.IsValid)
             {
-                bool isSuccess = _adManagementService.ResetUserPassword(
-                    model.Username,
-                    model.NewPassword,
-                    model.SetPasswordNeverExpires,
-                    model.RequirePasswordChangeOnLogon);
-
-                if (isSuccess)
+                try
                 {
+                    _adManagementService.ResetUserPassword(
+                         model.Username,
+                         model.NewPassword,
+                         model.SetPasswordNeverExpires,
+                         model.RequirePasswordChangeOnLogon);
+
                     // Thay vì Redirect, chúng ta báo cho View biết là đã thành công
                     // View sẽ dùng JavaScript để gửi thông điệp về cho trang chính
                     ViewBag.ResetSuccess = true;
                     TempData["SuccessMessage"] = $"Password and options for user '{model.Username}' have been updated successfully.";
                     return View(model);
+
                 }
-                else
+                catch (Exception ex)
                 {
-                    ModelState.AddModelError(string.Empty, "An error occurred while updating the user. Please check the application logs for details.");
+                    // Sửa 4: Bắt lỗi từ Service và hiển thị Stack Trace
+                    _logger.LogError(ex, "Error when the admin reset the password for {Username}", model.Username);
+                    string errorMessage = $"Error: {ex.Message}{Environment.NewLine}--- Stack Trace ---{Environment.NewLine}{ex.StackTrace}";
+                    ModelState.AddModelError(string.Empty, errorMessage);
                 }
             }
 
+            model.PasswordPolicyRules = GetPasswordPolicyRules();
             return View(model);
         }
 
@@ -250,27 +255,32 @@ namespace ADPasswordManager.Controllers
 
             if (ModelState.IsValid)
             {
-                bool isSuccess = _adManagementService.CreateUser(model.Username, model.EmailAddress, model.FirstName, model.LastName,
-                    model.Password, model.SelectedOU,model.RequirePasswordChangeOnLogon,model.SetPasswordNeverExpires);
-
-                if (isSuccess)
+                try
                 {
+                    _adManagementService.CreateUser(model.Username, model.EmailAddress, model.FirstName, model.LastName,
+                        model.Password, model.SelectedOU, model.RequirePasswordChangeOnLogon, model.SetPasswordNeverExpires);
+
                     // View sẽ dùng JavaScript để gửi thông điệp về cho trang chính
                     ViewBag.ResetSuccess = true;
                     TempData["SuccessMessage"] = $"Create user '{model.Username}' is successfully.";
                     return View(model);
-                }  
-                else
-                {
-                    ModelState.AddModelError(string.Empty, "An error occurred while add the user. Please check the application logs for details.");
+
                 }
-                // Nếu ModelState không hợp lệ, phải nạp lại danh sách OU
-                model.AvailableOUs = _adManagementService.GetAllOUs()
-                            .Select(ou => new SelectListItem { Text = ou, Value = ou })
-                            .ToList();
-                model.PasswordPolicyRules = GetPasswordPolicyRules();
+                catch (Exception ex)
+                {
+                    // Sửa 4: Bắt lỗi từ Service và hiển thị Stack Trace
+                    _logger.LogError(ex, "Error when the admin created the user {Username}", model.Username);
+                    string errorMessage = $"Error: {ex.Message}{Environment.NewLine} --- Stack Trace --- {Environment.NewLine}{ex.StackTrace}";
+                    ModelState.AddModelError(string.Empty, errorMessage);
+                }
+                
 
             }
+            // Nếu ModelState không hợp lệ, phải nạp lại danh sách OU
+            model.AvailableOUs = _adManagementService.GetAllOUs()
+                        .Select(ou => new SelectListItem { Text = ou, Value = ou })
+                        .ToList();
+            model.PasswordPolicyRules = GetPasswordPolicyRules();
             return View(model);
         }
 
@@ -319,9 +329,9 @@ namespace ADPasswordManager.Controllers
         {
             if (!_featureSettings.EnableSendPasswordResetLink)
                 if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(userEmail))
-            {
-                return Json(new { success = false, message = "Username or Email is missing." });
-            }
+                {
+                    return Json(new { success = false, message = "Username or Email is missing." });
+                }
 
             try
             {
@@ -404,7 +414,7 @@ namespace ADPasswordManager.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        
+
         public async Task<IActionResult> ToggleSqlAccess(string username, string sqlInstance)
         {
             if (!_featureSettings.EnableSqlAccessToggle)
@@ -420,7 +430,7 @@ namespace ADPasswordManager.Controllers
 
             try
             {
-              
+
 
                 var connectionString = BuildSqlConnectionString(sqlInstance);
                 if (connectionString == null)
